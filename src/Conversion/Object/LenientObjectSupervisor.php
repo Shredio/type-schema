@@ -1,0 +1,13 @@
+<?php declare(strict_types = 1);
+
+namespace Shredio\TypeSchema\Conversion\Object;
+
+final readonly class LenientObjectSupervisor implements ObjectSupervisor
+{
+
+	public function isStrict(string $className): bool
+	{
+		return false;
+	}
+
+}

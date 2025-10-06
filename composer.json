@@ -1,0 +1,30 @@
+{
+	"name": "shredio/type-schema",
+	"type": "library",
+	"license": "MIT",
+	"require": {
+		"php": ">=8.3",
+		"phpstan/phpdoc-parser": "^2.3"
+	},
+	"autoload": {
+		"psr-4": {
+			"Shredio\\TypeSchema\\": "src/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"Tests\\": "tests"
+		}
+	},
+	"scripts": {
+		"phpstan": "phpstan analyse --memory-limit=-1",
+		"test": "vendor/bin/phpunit tests",
+		"check": ["@phpstan", "@test"]
+	},
+	"require-dev": {
+		"phpstan/phpstan": "^2.1",
+		"phpunit/phpunit": "^12.3",
+		"nette/utils": "^4.0",
+		"symfony/translation": "^7.3"
+	}
+}

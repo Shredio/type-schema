@@ -1,0 +1,7 @@
+services:
+	-
+		class: Shredio\TypeSchema\PhpStan\ArrayShapeReturnTypeExtension
+		tags: [phpstan.broker.dynamicMethodReturnTypeExtension]
+	-
+		class: Shredio\TypeSchema\PhpStan\ValidatorReturnTypeExtension
+		tags: [phpstan.broker.dynamicMethodReturnTypeExtension]
