@@ -17,7 +17,13 @@ final readonly class DeveloperValidationMessageFactory
 
 	public static function invalidType(TypeDefinition $definition, mixed $value): string
 	{
-		return sprintf('Invalid type %s, expected %s.', get_debug_type($value), $definition->getStringType());
+		$str = sprintf('Invalid type %s', get_debug_type($value));
+		if (is_scalar($value)) {
+			$str .= sprintf(' with value %s', self::describeValue($value));
+		}
+		$str .= sprintf(', expected %s.', $definition->getStringType());
+
+		return $str;
 	}
 
 	/**
@@ -71,7 +77,7 @@ final readonly class DeveloperValidationMessageFactory
 		return sprintf('Item count %d is not in the expected range %s.', $count, $range->toString());
 	}
 
-	private static function describeValue(mixed $value): string
+	public static function describeValue(mixed $value): string
 	{
 		if ($value === null || is_bool($value) || is_int($value)) {
 			return json_encode($value, self::JsonEncodeOptions);

@@ -89,11 +89,12 @@ class TypeSchema
 	 * @template TKey of array-key
 	 * @template TValue
 	 * @param array<TKey, Type<TValue>> $schema
+	 * @param non-empty-string|null $identifier
 	 * @return Type<array<TKey, TValue>>
 	 */
-	public function arrayShape(array $schema, bool $allowExtraItems = false): Type
+	public function arrayShape(array $schema, bool $allowExtraItems = false, ?string $identifier = null): Type
 	{
-		return new Types\ArrayShapeType($schema, $allowExtraItems);
+		return new Types\ArrayShapeType($schema, $allowExtraItems, $identifier);
 	}
 
 	/**

@@ -10,6 +10,7 @@ use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
 use Shredio\TypeSchema\Error\ErrorElement;
+use Shredio\TypeSchema\Error\IdentifiedPath;
 
 /**
  * @template TKey of array-key
@@ -28,10 +29,12 @@ final readonly class ArrayShapeType extends Type
 
 	/**
 	 * @param array<TKey, Type<TValue>> $elements
+	 * @param non-empty-string|null $identifier
 	 */
 	public function __construct(
 		array $elements,
 		private bool $allowExtraKeys = false,
+		private ?string $identifier = null,
 	)
 	{
 		$required = [];
@@ -60,7 +63,11 @@ final readonly class ArrayShapeType extends Type
 		$nestedContexts = $context->getNestedContexts();
 		foreach ($this->required as $key => $type) {
 			if (!array_key_exists($key, $value)) { // missing required key
-				$error = $this->createChildError($context->errorElementFactory->missingField($this->createDefinition($context)), $key);
+				$error = $this->createChildError(
+					$context->errorElementFactory->missingField($this->createDefinition($context)),
+					$key,
+					IdentifiedPath::create($this->identifier, $return),
+				);
 
 				if ($context->collectErrors) {
 					$errors[] = $error;
@@ -76,16 +83,20 @@ final readonly class ArrayShapeType extends Type
 			if (!$ret instanceof ErrorElement) {
 				$return[$key] = $ret;
 			} else if ($context->collectErrors) { // error in the required key
-				$errors[] = $this->createChildError($ret, $key);
+				$errors[] = $this->createChildError($ret, $key, IdentifiedPath::create($this->identifier, $return));
 			} else { // error in the required key
-				return $this->createChildError($ret, $key);
+				return $this->createChildError($ret, $key, IdentifiedPath::create($this->identifier, $return));
 			}
 		}
 
 		foreach ($value as $key => $val) {
 			if (!isset($this->optional[$key])) {
 				if (!$this->allowExtraKeys) {
-					$error = $this->createChildError($context->errorElementFactory->extraField($this->createDefinition($context)), $key);
+					$error = $this->createChildError(
+						$context->errorElementFactory->extraField($this->createDefinition($context)),
+						$key,
+						IdentifiedPath::create($this->identifier, $return),
+					);
 
 					if ($context->collectErrors) {
 						$errors[] = $error;
@@ -104,9 +115,9 @@ final readonly class ArrayShapeType extends Type
 			if (!$ret instanceof ErrorElement) {
 				$return[$key] = $ret;
 			} else if ($context->collectErrors) {
-				$errors[] = $this->createChildError($ret, $key);
+				$errors[] = $this->createChildError($ret, $key, IdentifiedPath::create($this->identifier, $return));
 			} else {
-				return $this->createChildError($ret, $key);
+				return $this->createChildError($ret, $key, IdentifiedPath::create($this->identifier, $return));
 			}
 		}
 

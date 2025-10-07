@@ -8,6 +8,8 @@ use Shredio\TypeSchema\Context\TypeDefinition;
 use Shredio\TypeSchema\Error\ErrorCollection;
 use Shredio\TypeSchema\Error\ErrorElement;
 use Shredio\TypeSchema\Error\ErrorPath;
+use Shredio\TypeSchema\Error\IdentifiedPath;
+use Shredio\TypeSchema\Error\Path;
 
 /**
  * @template-covariant T
@@ -54,9 +56,13 @@ abstract readonly class Type
 		return !isset($errors[1]) ? $errors[0] : new ErrorCollection($errors);
 	}
 
-	final protected function createChildError(ErrorElement $error, string|int $path): ErrorElement
+	final protected function createChildError(
+		ErrorElement $error,
+		string|int $path,
+		?IdentifiedPath $identified = null,
+	): ErrorElement
 	{
-		return new ErrorPath($error, $path);
+		return new ErrorPath($error, new Path($path, $identified));
 	}
 
 }

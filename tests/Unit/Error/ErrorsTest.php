@@ -82,7 +82,7 @@ final class ErrorsTest extends TestCase
 		]);
 
 		$this->assertSame(<<<'ERROR'
-Invalid type int, expected string.
+Invalid type int with value 15, expected string.
   → at name
 Invalid type null, expected bool.
   → at projects.[0].completed
@@ -137,7 +137,7 @@ ERROR, $exception->toPrettyString(''));
 		]);
 
 		$this->assertSame(<<<'ERROR'
-Invalid type int, expected string.
+Invalid type int with value 15, expected string.
   → at name
 ERROR, $exception->toPrettyString(''));
 		$this->assertSame([

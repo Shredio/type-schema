@@ -8,4 +8,13 @@ use Attribute;
 final readonly class CompileObjectMapper
 {
 
+	/**
+	 * @param non-empty-string|null $identifier
+	 */
+	public function __construct(
+		public ?string $identifier = null,
+	)
+	{
+	}
+
 }

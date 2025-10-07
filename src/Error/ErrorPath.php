@@ -7,7 +7,7 @@ final readonly class ErrorPath implements ErrorElement
 
 	public function __construct(
 		public ErrorElement $error,
-		public string|int $path,
+		public Path $path,
 	)
 	{
 	}

@@ -6,7 +6,7 @@ interface ErrorElement
 {
 
 	/**
-	 * @param list<string|int> $path
+	 * @param list<Path> $path
 	 * @return non-empty-list<ErrorReport>
 	 */
 	public function getReports(array $path = []): array;
