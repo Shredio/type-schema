@@ -25,12 +25,11 @@ final readonly class DeveloperValidationMessageFactory
 	 */
 	public static function missingField(TypeDefinition $definition, array $path = []): string
 	{
-		$stringType = $definition->getSimplifiedStringType();
 		$lastKey = array_key_last($path);
 		if ($lastKey === null) {
-			return sprintf('Key is missing in %s.', $stringType);
+			return 'Key is missing.';
 		} else {
-			return sprintf('Key \'%s\' is missing in %s.', $path[$lastKey], $stringType);
+			return sprintf('Key \'%s\' is missing.', $path[$lastKey]);
 		}
 	}
 
@@ -39,12 +38,11 @@ final readonly class DeveloperValidationMessageFactory
 	 */
 	public static function extraField(TypeDefinition $definition, array $path = []): string
 	{
-		$stringType = $definition->getSimplifiedStringType();
 		$lastKey = array_key_last($path);
 		if ($lastKey === null) {
-			return sprintf('Key is not expected in %s.', $stringType);
+			return 'Extra key found.';
 		} else {
-			return sprintf('Key \'%s\' is not expected in %s.', $path[$lastKey], $stringType);
+			return sprintf('Extra key \'%s\' found.', $path[$lastKey]);
 		}
 	}
 
