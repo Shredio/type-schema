@@ -29,11 +29,12 @@ class TypeSchema
 	/**
 	 * @template T
 	 * @param Type<T> $type
+	 * @param list<mixed> $nullValues
 	 * @return Type<T|null>
 	 */
-	public function nullable(Type $type): Type
+	public function nullable(Type $type, array $nullValues = []): Type
 	{
-		return new Types\NullableType($type);
+		return new Types\NullableType($type, $nullValues);
 	}
 
 	/**
