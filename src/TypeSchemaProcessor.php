@@ -45,7 +45,7 @@ final readonly class TypeSchemaProcessor
 	 */
 	public function matches(mixed $value, Type $type, ?TypeConfig $config = null): bool
 	{
-		$return = $this->invoke($value, $type, $config);
+		$return = $this->parse($value, $type, $config);
 		return !$return instanceof ErrorElement;
 	}
 
@@ -58,7 +58,7 @@ final readonly class TypeSchemaProcessor
 	 */
 	public function process(mixed $value, Type $type, ?TypeConfig $config = null): mixed
 	{
-		$return = $this->invoke($value, $type, $config, true);
+		$return = $this->parse($value, $type, $config, true);
 		return $return instanceof ErrorElement ? throw new AssertException($return) : $return;
 	}
 
@@ -71,7 +71,7 @@ final readonly class TypeSchemaProcessor
 	 */
 	public function processFast(mixed $value, Type $type, ?TypeConfig $config = null): mixed
 	{
-		$return = $this->invoke($value, $type, $config);
+		$return = $this->parse($value, $type, $config);
 		return $return instanceof ErrorElement ? throw new AssertException($return) : $return;
 	}
 
@@ -80,12 +80,7 @@ final readonly class TypeSchemaProcessor
 	 * @param Type<T> $type
 	 * @return T|ErrorElement
 	 */
-	private function invoke(
-		mixed $value,
-		Type $type,
-		?TypeConfig $config = null,
-		bool $collectErrors = false,
-	): mixed
+	public function parse(mixed $value, Type $type, ?TypeConfig $config = null, bool $collectErrors = false): mixed
 	{
 		if ($config === null) {
 			$context = new TypeContext(
