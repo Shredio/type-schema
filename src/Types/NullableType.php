@@ -16,9 +16,11 @@ final readonly class NullableType extends Type
 
 	/**
 	 * @param Type<T> $type
+	 * @param list<mixed> $nullValues
 	 */
 	public function __construct(
 		private Type $type,
+		private array $nullValues = [],
 	)
 	{
 	}
@@ -26,6 +28,9 @@ final readonly class NullableType extends Type
 	public function parse(mixed $valueToParse, TypeContext $context): mixed
 	{
 		if ($valueToParse === null) {
+			return null;
+		}
+		if (in_array($valueToParse, $this->nullValues, true)) {
 			return null;
 		}
 

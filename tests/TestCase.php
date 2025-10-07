@@ -2,6 +2,9 @@
 
 namespace Tests;
 
+use Shredio\TypeSchema\Config\TypeConfig;
+use Shredio\TypeSchema\Conversion\ConversionStrategyFactory;
+use Shredio\TypeSchema\Error\ErrorElement;
 use Shredio\TypeSchema\Mapper\DefaultObjectMapperProvider;
 use Shredio\TypeSchema\Types\Type;
 use Shredio\TypeSchema\TypeSchema;
@@ -20,6 +23,32 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
 			new SymfonyErrorElementFactory(new IdentityTranslator()),
 			new DefaultObjectMapperProvider(),
 		);
+	}
+
+	/**
+	 * @template T
+	 * @param Type<T> $type
+	 * @return T
+	 */
+	protected function validStrictParse(Type $type, mixed $value): mixed
+	{
+		$ret = $this->getProcessor()->parse($value, $type);
+		$this->assertNotInstanceOf(ErrorElement::class, $ret);
+
+		return $ret;
+	}
+
+	/**
+	 * @template T
+	 * @param Type<T> $type
+	 * @return T
+	 */
+	protected function validLenientParse(Type $type, mixed $value): mixed
+	{
+		$ret = $this->getProcessor()->parse($value, $type, new TypeConfig(ConversionStrategyFactory::lenient()));
+		$this->assertNotInstanceOf(ErrorElement::class, $ret);
+
+		return $ret;
 	}
 
 	/**

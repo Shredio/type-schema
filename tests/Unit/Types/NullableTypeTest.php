@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Types;
 
+use Shredio\TypeSchema\Types\NonEmptyStringType;
 use Shredio\TypeSchema\Types\NullableType;
 use Shredio\TypeSchema\Types\StringType;
 use Tests\TypeTestCase;
@@ -47,6 +48,27 @@ final class NullableTypeTest extends TypeTestCase
 		yield 'resource' => $this->resource();
 		yield 'generator' => $this->generator(['hello']);
 		yield 'array iterator' => new \ArrayIterator(['hello']);
+	}
+
+	public function testLenientNullableTypeForNonEmptyString(): void
+	{
+		$type = new NullableType(new NonEmptyStringType());
+
+		$this->assertNull($this->validLenientParse($type, ''));
+	}
+
+	public function testCustomNullableValue(): void
+	{
+		$type = new NullableType(new NonEmptyStringType(), ['N/A']);
+
+		$this->assertNull($this->validStrictParse($type, 'N/A'));
+	}
+
+	public function testEmptyStringNullableValue(): void
+	{
+		$type = new NullableType(new NonEmptyStringType(), ['']);
+
+		$this->assertNull($this->validStrictParse($type, ''));
 	}
 
 }
