@@ -4,6 +4,7 @@ namespace Shredio\TypeSchema\Types;
 
 use Shredio\TypeSchema\Context\TypeContext;
 use Shredio\TypeSchema\Error\ErrorElement;
+use Shredio\TypeSchema\Error\ErrorInvalidType;
 
 /**
  * @template-covariant T
@@ -16,7 +17,11 @@ abstract readonly class DecorateType extends Type
 	final public function parse(mixed $valueToParse, TypeContext $context): mixed
 	{
 		$value = $this->getInnerType()->parse($valueToParse, $context);
-		if ($this->isError($value)) {
+		if ($value instanceof ErrorElement) {
+			if ($value instanceof ErrorInvalidType) {
+				return $value->withDefinition($this->createDefinition($context));
+			}
+
 			return $value;
 		}
 
