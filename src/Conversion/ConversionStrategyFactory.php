@@ -50,10 +50,10 @@ final class ConversionStrategyFactory
 	public static function json(): ConversionStrategy
 	{
 		return self::$jsonStrategy ??= new ConfigurableConversionStrategy(
-			new LenientStringConverter(),
+			new StrictStringConverter(),
 			new JsonNumberConverter(),
-			new LenientBoolConverter(),
-			new LenientNullConverter(),
+			new StrictBoolConverter(),
+			new StrictNullConverter(),
 			new LenientArrayConverter(),
 			new LenientObjectSupervisor(),
 		);
