@@ -25,7 +25,7 @@ abstract readonly class Type
 
 	final protected function createDefinition(TypeContext $context): TypeDefinition
 	{
-		return new TypeDefinition($this, fn (): TypeNode => $this->getTypeNode($context));
+		return new TypeDefinition(fn (): TypeNode => $this->getTypeNode($context));
 	}
 
 	/**

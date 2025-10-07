@@ -5,12 +5,12 @@ namespace Shredio\TypeSchema\Validation;
 use InvalidArgumentException;
 use Shredio\TypeSchema\Context\TypeDefinition;
 use Shredio\TypeSchema\Error\ErrorElement;
+use Shredio\TypeSchema\Error\ErrorInvalidType;
 use Shredio\TypeSchema\Error\ErrorMessage;
 use Shredio\TypeSchema\Helper\NumberInclusiveRange;
 use Shredio\TypeSchema\Helper\NumberRange;
 use Shredio\TypeSchema\Helper\RangeExclusiveDecision;
 use Shredio\TypeSchema\Helper\RangeInclusiveDecision;
-use Shredio\TypeSchema\Types\Type;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
@@ -23,23 +23,19 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 	{
 	}
 
-	public function invalidType(TypeDefinition $definition, mixed $value): ErrorElement
+	public function invalidType(TypeDefinition $definition, mixed $value): ErrorInvalidType
 	{
-		$userType = $definition->getUserSafeType();
-		if ($userType !== null) {
-			$message = $this->translator->trans(
-				'This value should be of type {{ type }}.',
-				['{{ type }}' => $userType],
-				$this->domain,
-			);
-		} else {
-			$message = $this->translator->trans('This value is not valid.', [], $this->domain);
-		}
+		return new ErrorInvalidType($definition, function (?string $userType): string {
+			if ($userType !== null) {
+				return $this->translator->trans(
+					'This value should be of type {{ type }}.',
+					['{{ type }}' => $userType],
+					$this->domain,
+				);
+			}
 
-		return new ErrorMessage(
-			$message,
-			DeveloperValidationMessageFactory::invalidType($definition, $value),
-		);
+			return $this->translator->trans('This value is not valid.', [], $this->domain);
+		}, $value);
 	}
 
 	public function missingField(TypeDefinition $definition): ErrorElement

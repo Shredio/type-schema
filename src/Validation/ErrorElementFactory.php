@@ -4,17 +4,17 @@ namespace Shredio\TypeSchema\Validation;
 
 use Shredio\TypeSchema\Context\TypeDefinition;
 use Shredio\TypeSchema\Error\ErrorElement;
+use Shredio\TypeSchema\Error\ErrorInvalidType;
 use Shredio\TypeSchema\Error\ErrorMessage;
 use Shredio\TypeSchema\Helper\NumberInclusiveRange;
 use Shredio\TypeSchema\Helper\NumberRange;
 use Shredio\TypeSchema\Helper\RangeExclusiveDecision;
 use Shredio\TypeSchema\Helper\RangeInclusiveDecision;
-use Shredio\TypeSchema\Types\Type;
 
 interface ErrorElementFactory
 {
 
-	public function invalidType(TypeDefinition $definition, mixed $value): ErrorElement;
+	public function invalidType(TypeDefinition $definition, mixed $value): ErrorInvalidType;
 
 	public function missingField(TypeDefinition $definition): ErrorElement;
 

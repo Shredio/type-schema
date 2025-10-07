@@ -86,7 +86,7 @@ Invalid type int, expected string.
   → at name
 Invalid type null, expected bool.
   → at projects.[0].completed
-Key is missing in array.
+Key is missing.
   → at projects.[1].budget
 ERROR, $exception->toPrettyString(''));
 		$this->assertSame([

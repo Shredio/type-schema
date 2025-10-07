@@ -3,7 +3,6 @@
 namespace Shredio\TypeSchema\Context;
 
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
-use Shredio\TypeSchema\Types\Type;
 use Shredio\TypeSchema\TypeSystem\TypeNodeHelper;
 
 final class TypeDefinition
@@ -13,11 +12,9 @@ final class TypeDefinition
 	private mixed $typeNode;
 
 	/**
-	 * @param Type<mixed> $type
 	 * @param callable(): TypeNode $typeNode
 	 */
 	public function __construct(
-		public readonly Type $type,
 		callable $typeNode,
 	)
 	{
@@ -34,6 +31,9 @@ final class TypeDefinition
 		return (string) TypeNodeHelper::simplifyType($this->getTypeNode());
 	}
 
+	/**
+	 * @return non-empty-string|null
+	 */
 	public function getUserSafeType(string $separator = '|'): ?string
 	{
 		$types = TypeNodeHelper::getUserSafeTypes($this->getTypeNode());
