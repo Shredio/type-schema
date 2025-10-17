@@ -118,6 +118,18 @@ class TypeSchema
 	}
 
 	/**
+	 * @template TKey of array-key
+	 * @template-covariant TValue
+	 * @param Type<TKey> $keyType
+	 * @param Type<TValue> $valueType
+	 * @return Type<array<TKey, TValue>>
+	 */
+	public function array(Type $keyType, Type $valueType): Type
+	{
+		return new Types\ArrayType($keyType, $valueType);
+	}
+
+	/**
 	 * @return Type<non-empty-string>
 	 */
 	public function nonEmptyString(): Type
