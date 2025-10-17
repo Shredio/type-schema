@@ -124,7 +124,7 @@ class TypeSchema
 	 * @param Type<TValue> $valueType
 	 * @return Type<array<TKey, TValue>>
 	 */
-	public function array(Type $keyType, Type $valueType): Type
+	public function array(Type $keyType, Type $valueType): Type // @phpstan-ignore method.variance
 	{
 		return new Types\ArrayType($keyType, $valueType);
 	}
