@@ -12,4 +12,12 @@ final readonly class Path
 	{
 	}
 
+	public function withPath(string|int $path): self
+	{
+		return new Path(
+			$path,
+			$this->identified,
+		);
+	}
+
 }

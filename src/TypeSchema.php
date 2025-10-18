@@ -2,6 +2,8 @@
 
 namespace Shredio\TypeSchema;
 
+use Shredio\TypeSchema\Context\TypeContext;
+use Shredio\TypeSchema\Error\ErrorElement;
 use Shredio\TypeSchema\Types\Type;
 use Shredio\TypeSchema\Types\UnionType;
 
@@ -127,6 +129,19 @@ class TypeSchema
 	public function array(Type $keyType, Type $valueType): Type // @phpstan-ignore method.variance
 	{
 		return new Types\ArrayType($keyType, $valueType);
+	}
+
+	/**
+	 * @no-named-arguments
+	 * @template T
+	 * @param callable(mixed $valueToParse, TypeContext $context): mixed $fn
+	 * @param Type<T> $type
+	 * @param (callable(ErrorElement $error): ErrorElement)|null $onError
+	 * @return Type<T>
+	 */
+	public function before(callable $fn, Type $type, ?callable $onError = null): Type
+	{
+		return new Types\BeforeType($fn, $type, $onError);
 	}
 
 	/**

@@ -12,6 +12,14 @@ final readonly class ErrorPath implements ErrorElement
 	{
 	}
 
+	public function withPath(Path $path): self
+	{
+		return new ErrorPath(
+			$this->error,
+			$path,
+		);
+	}
+
 	public function getReports(array $path = []): array
 	{
 		$path[] = $this->path;

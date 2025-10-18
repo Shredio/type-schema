@@ -1,5 +1,6 @@
 <?php declare(strict_types = 1);
 
+use Shredio\TypeSchema\Helper\TypeSchemaHelper;
 use Shredio\TypeSchema\TypeSchema;
 use Shredio\TypeSchema\TypeSchemaProcessor;
 use function PHPStan\Testing\assertType;
@@ -56,3 +57,5 @@ $schema = $s->nullable($s->arrayShape([
 
 assertType('Shredio\TypeSchema\Types\Type<array{int: int, bool: bool, nullable: int|null}|null>', $schema);
 assertType('array{int: int, bool: bool, nullable: int|null}|null', TypeSchemaProcessor::createDefault()->process([], $schema));
+
+assertType('array{int: int, bool: bool, nullable: int|null}|null', TypeSchemaProcessor::createDefault()->process([], TypeSchemaHelper::reindexShape([], $schema)));

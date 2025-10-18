@@ -5,3 +5,11 @@ services:
 	-
 		class: Shredio\TypeSchema\PhpStan\ValidatorReturnTypeExtension
 		tags: [phpstan.broker.dynamicMethodReturnTypeExtension]
+	-
+		class: Shredio\TypeSchema\PhpStan\KeepReturnTypeExtension
+		arguments: [Shredio\TypeSchema\TypeSchema, [before: 1]]
+		tags: [phpstan.broker.dynamicMethodReturnTypeExtension]
+	-
+		class: Shredio\TypeSchema\PhpStan\KeepReturnTypeExtension
+		arguments: [Shredio\TypeSchema\Helper\TypeSchemaHelper, [reindexShape: 1]]
+		tags: [phpstan.broker.dynamicStaticMethodReturnTypeExtension]
