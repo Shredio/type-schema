@@ -56,6 +56,14 @@ class TypeSchema
 	}
 
 	/**
+	 * @return Type<null>
+	 */
+	public function null(): Type
+	{
+		return new Types\NullType();
+	}
+
+	/**
 	 * @return Type<float>
 	 */
 	public function float(): Type
