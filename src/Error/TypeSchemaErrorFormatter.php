@@ -14,7 +14,7 @@ final readonly class TypeSchemaErrorFormatter
 
 		foreach ($error->getReports() as $error) {
 			$line = $listStyle . $error->messageForDeveloper;
-			$pathString = $error->toPathString();
+			$pathString = $error->toDebugPathString();
 			if ($pathString !== null) {
 				$line .= sprintf("\n  %sat %s", $pathStyle, $pathString);
 				$identifiedPath = $error->toIdentifiedPath();

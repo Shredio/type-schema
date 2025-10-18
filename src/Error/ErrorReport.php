@@ -19,7 +19,22 @@ final readonly class ErrorReport
 	{
 	}
 
-	public function toPathString(): ?string
+	/**
+	 * @return list<int|string>
+	 */
+	public function toArrayPath(): array
+	{
+		if ($this->path === []) {
+			return [];
+		}
+
+		return array_map(
+			fn (Path $path): int|string => $path->path,
+			$this->path,
+		);
+	}
+
+	public function toDebugPathString(): ?string
 	{
 		if ($this->path === []) {
 			return null;
