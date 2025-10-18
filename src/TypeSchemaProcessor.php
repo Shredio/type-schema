@@ -27,16 +27,20 @@ final readonly class TypeSchemaProcessor
 	{
 	}
 
-	public static function createDefault(): self
+	public static function createDefault(
+		?ConversionStrategy $conversionStrategy = null,
+		?ErrorElementFactory $errorElementFactory = null,
+		?ClassMapperProvider $classMapperProvider = null,
+	): self
 	{
 		if (!class_exists(IdentityTranslator::class)) {
 			throw new LogicException('You need to install symfony/translation to use the default TypeSchemaProcessor');
 		}
 
 		return new self(
-			ConversionStrategyFactory::strict(),
-			new SymfonyErrorElementFactory(new IdentityTranslator()),
-			new RegistryClassMapperProvider(RegistryClassMapperProvider::createDefaultClassMappers()),
+			$conversionStrategy ?? ConversionStrategyFactory::strict(),
+			$errorElementFactory ?? new SymfonyErrorElementFactory(new IdentityTranslator()),
+			$classMapperProvider ?? new RegistryClassMapperProvider(RegistryClassMapperProvider::createDefaultClassMappers()),
 		);
 	}
 
