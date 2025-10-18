@@ -5,36 +5,36 @@ namespace Shredio\TypeSchema\Mapper\Jit;
 final readonly class ObjectMapperCompilerContext
 {
 
-	/** @var callable(ObjectMapperToCompile<object>): bool */
-	private mixed $hasProviderFor;
+	/** @var callable(ClassMapperToCompile<object>): bool */
+	private mixed $needsToCompile;
 
 	/**
 	 * @no-named-arguments
-	 * @param callable(ObjectMapperToCompile<object>): bool $hasProviderFor
+	 * @param callable(ClassMapperToCompile<object>): bool $needsToCompile
 	 */
 	public function __construct(
-		private ObjectMapperCompileInfoProvider $compileInfoProvider,
-		callable $hasProviderFor,
+		private ClassMapperCompileTargetProvider $compileInfoProvider,
+		callable $needsToCompile,
 	)
 	{
-		$this->hasProviderFor = $hasProviderFor;
+		$this->needsToCompile = $needsToCompile;
 	}
 
 	/**
 	 * @no-named-arguments
-	 * @param ObjectMapperToCompile<object> $mapperToCompile
+	 * @param ClassMapperToCompile<object> $mapperToCompile
 	 */
-	public function hasProviderFor(ObjectMapperToCompile $mapperToCompile): bool
+	public function hasProviderFor(ClassMapperToCompile $mapperToCompile): bool
 	{
-		return ($this->hasProviderFor)($mapperToCompile);
+		return !($this->needsToCompile)($mapperToCompile);
 	}
 
 	/**
 	 * @template T of object
 	 * @param class-string<T> $className
-	 * @return ObjectMapperToCompile<T>
+	 * @return ClassMapperToCompile<T>
 	 */
-	public function createObjectMapperToCompile(string $className): ObjectMapperToCompile
+	public function createObjectMapperToCompile(string $className): ClassMapperToCompile
 	{
 		return $this->compileInfoProvider->provide($className);
 	}

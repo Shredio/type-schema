@@ -3,7 +3,7 @@
 namespace Shredio\TypeSchema\Config;
 
 use Shredio\TypeSchema\Conversion\ConversionStrategy;
-use Shredio\TypeSchema\Mapper\ObjectMapperProvider;
+use Shredio\TypeSchema\Mapper\ClassMapperProvider;
 
 readonly class TypeConfig
 {
@@ -13,7 +13,7 @@ readonly class TypeConfig
 	 */
 	public function __construct(
 		public ?ConversionStrategy $conversionStrategy = null,
-		public ?ObjectMapperProvider $objectMapperProvider = null,
+		public ?ClassMapperProvider $classMapperProvider = null,
 		public ?TypeHierarchyConfig $hierarchyConfig = null,
 		public array $options = [],
 	)
@@ -37,13 +37,13 @@ readonly class TypeConfig
 	{
 		return new self(
 			$conversionStrategy,
-			$this->objectMapperProvider,
+			$this->classMapperProvider,
 			$this->hierarchyConfig,
 			$this->options,
 		);
 	}
 
-	public function withObjectMapperProvider(?ObjectMapperProvider $objectMapperProvider): TypeConfig
+	public function withObjectMapperProvider(?ClassMapperProvider $objectMapperProvider): TypeConfig
 	{
 		return new self(
 			$this->conversionStrategy,
@@ -59,7 +59,7 @@ readonly class TypeConfig
 
 		return new self(
 			$this->conversionStrategy,
-			$this->objectMapperProvider,
+			$this->classMapperProvider,
 			$this->hierarchyConfig,
 			$options,
 		);
@@ -72,7 +72,7 @@ readonly class TypeConfig
 	{
 		return new self(
 			$this->conversionStrategy,
-			$this->objectMapperProvider,
+			$this->classMapperProvider,
 			TypeHierarchyConfig::fromArray($values),
 		);
 	}

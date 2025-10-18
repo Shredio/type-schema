@@ -9,8 +9,8 @@ use Shredio\TypeSchema\Conversion\ConversionStrategyFactory;
 use Shredio\TypeSchema\Error\ErrorElement;
 use Shredio\TypeSchema\Exception\AssertException;
 use Shredio\TypeSchema\Exception\LogicException;
-use Shredio\TypeSchema\Mapper\DefaultObjectMapperProvider;
-use Shredio\TypeSchema\Mapper\ObjectMapperProvider;
+use Shredio\TypeSchema\Mapper\ClassMapperProvider;
+use Shredio\TypeSchema\Mapper\RegistryClassMapperProvider;
 use Shredio\TypeSchema\Types\Type;
 use Shredio\TypeSchema\Validation\ErrorElementFactory;
 use Shredio\TypeSchema\Validation\SymfonyErrorElementFactory;
@@ -22,7 +22,7 @@ final readonly class TypeSchemaProcessor
 	public function __construct(
 		private ConversionStrategy $conversionStrategy,
 		private ErrorElementFactory $errorElementFactory,
-		private ObjectMapperProvider $objectMapperProvider,
+		private ClassMapperProvider $classMapperProvider,
 	)
 	{
 	}
@@ -36,7 +36,7 @@ final readonly class TypeSchemaProcessor
 		return new self(
 			ConversionStrategyFactory::strict(),
 			new SymfonyErrorElementFactory(new IdentityTranslator()),
-			new DefaultObjectMapperProvider(),
+			new RegistryClassMapperProvider(RegistryClassMapperProvider::createDefaultClassMappers()),
 		);
 	}
 
@@ -86,7 +86,7 @@ final readonly class TypeSchemaProcessor
 			$context = new TypeContext(
 				$this->conversionStrategy,
 				$this->errorElementFactory,
-				$this->objectMapperProvider,
+				$this->classMapperProvider,
 				null,
 				[],
 				$collectErrors,
@@ -95,7 +95,7 @@ final readonly class TypeSchemaProcessor
 			$context = new TypeContext(
 				$config->conversionStrategy ?? $this->conversionStrategy,
 				$this->errorElementFactory,
-				$config->objectMapperProvider ?? $this->objectMapperProvider,
+				$config->classMapperProvider ?? $this->classMapperProvider,
 				$config->hierarchyConfig,
 				[],
 				$collectErrors,

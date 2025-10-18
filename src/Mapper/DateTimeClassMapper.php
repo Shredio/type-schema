@@ -5,17 +5,14 @@ namespace Shredio\TypeSchema\Mapper;
 use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
-use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
-use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
 use Shredio\TypeSchema\Mapper\Options\DateTimeOptions;
-use Shredio\TypeSchema\Types\Type;
 
 /**
  * @template T of DateTime|DateTimeImmutable
- * @extends Type<T>
+ * @extends ClassMapper<T>
  */
-final readonly class DateTimeMapper extends Type
+final readonly class DateTimeClassMapper extends ClassMapper
 {
 
 	/**
@@ -27,19 +24,13 @@ final readonly class DateTimeMapper extends Type
 	{
 	}
 
-	public function parse(mixed $valueToParse, TypeContext $context): mixed
+	public function isSupported(string $className): bool
 	{
-		if ($valueToParse instanceof $this->className) {
-			return $valueToParse;
-		}
-		if ($valueToParse instanceof DateTimeInterface) {
-			return $this->className::createFromInterface($valueToParse);
-		}
+		return is_a($className, DateTimeInterface::class, true);
+	}
 
-		if ($context->conversionStrategy->isStrictForObject(DateTimeInterface::class)) {
-			return $context->errorElementFactory->invalidType($this->createDefinition($context), $valueToParse);
-		}
-
+	public function create(string $className, mixed $valueToParse, TypeContext $context): object
+	{
 		if (is_string($valueToParse)) {
 			$options = $context->getOption(DateTimeOptions::class) ?? new DateTimeOptions();
 
@@ -66,12 +57,7 @@ final readonly class DateTimeMapper extends Type
 			}
 		}
 
-		return $context->errorElementFactory->invalidType($this->createDefinition($context), $valueToParse);
-	}
-
-	protected function getTypeNode(TypeContext $context): TypeNode
-	{
-		return new IdentifierTypeNode($this->className);
+		return $context->errorElementFactory->invalidType($this->createDefinition($className), $valueToParse);
 	}
 
 }

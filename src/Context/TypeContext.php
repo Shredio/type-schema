@@ -4,7 +4,7 @@ namespace Shredio\TypeSchema\Context;
 
 use Shredio\TypeSchema\Config\TypeHierarchyConfig;
 use Shredio\TypeSchema\Conversion\ConversionStrategy;
-use Shredio\TypeSchema\Mapper\ObjectMapperProvider;
+use Shredio\TypeSchema\Mapper\ClassMapperProvider;
 use Shredio\TypeSchema\Validation\ErrorElementFactory;
 
 final readonly class TypeContext
@@ -16,7 +16,7 @@ final readonly class TypeContext
 	public function __construct(
 		public ConversionStrategy $conversionStrategy,
 		public ErrorElementFactory $errorElementFactory,
-		public ObjectMapperProvider $objectMapperProvider,
+		public ClassMapperProvider $classMapperProvider,
 		public ?TypeHierarchyConfig $hierarchyConfig = null,
 		private array $options = [],
 		public bool $collectErrors = false,
@@ -50,7 +50,7 @@ final readonly class TypeContext
 				$contexts[$key] = new self(
 					$this->conversionStrategy,
 					$this->errorElementFactory,
-					$this->objectMapperProvider,
+					$this->classMapperProvider,
 					$childConfig,
 					$this->options,
 					$this->collectErrors,
@@ -59,7 +59,7 @@ final readonly class TypeContext
 				$contexts[$key] = new self(
 					$childConfig->conversionStrategy ?? $this->conversionStrategy,
 					$this->errorElementFactory,
-					$this->objectMapperProvider,
+					$this->classMapperProvider,
 					null,
 					$childConfig->options,
 					$this->collectErrors,

@@ -2,7 +2,7 @@
 
 namespace Shredio\TypeSchema\Exception;
 
-final class ObjectMapperNotFoundException extends \LogicException
+final class ClassMapperNotFoundException extends \LogicException
 {
 
 	/**
@@ -10,7 +10,7 @@ final class ObjectMapperNotFoundException extends \LogicException
 	 */
 	public function __construct(string $className)
 	{
-		parent::__construct(sprintf('Object mapper for class "%s" not found.', $className));
+		parent::__construct(sprintf('Class mapper for class "%s" not found.', $className));
 	}
 
 }

@@ -4,7 +4,7 @@ namespace Shredio\TypeSchema\Mapper\Jit;
 
 use Shredio\TypeSchema\Types\Type;
 
-final readonly class ObjectMapperCompileStaticInfoProvider implements ObjectMapperCompileInfoProvider
+final readonly class ClassMapperCompileHashedTargetProvider implements ClassMapperCompileTargetProvider
 {
 
 	/**
@@ -21,16 +21,17 @@ final readonly class ObjectMapperCompileStaticInfoProvider implements ObjectMapp
 	/**
 	 * @template T of object
 	 * @param class-string<T> $className
-	 * @return ObjectMapperToCompile<T>
+	 * @return ClassMapperToCompile<T>
 	 */
-	public function provide(string $className): ObjectMapperToCompile
+	public function provide(string $className): ClassMapperToCompile
 	{
 		$shortName = $this->extractShortName($className);
+		$hash = substr(md5($className), 0, 10);
 		/** @var class-string<Type<T>> $mapperClassName */
-		$mapperClassName = sprintf($this->mapperClassNamePattern, $shortName);
+		$mapperClassName = sprintf('%s_%s', sprintf($this->mapperClassNamePattern, $shortName), $hash);
 		$targetFilePath = sprintf('%s/%s.php', rtrim($this->directoryPath, '/'), $this->extractShortName($mapperClassName));
 
-		return new ObjectMapperToCompile(
+		return new ClassMapperToCompile(
 			className: $className,
 			mapperClassName: $mapperClassName,
 			targetFilePath: $targetFilePath,

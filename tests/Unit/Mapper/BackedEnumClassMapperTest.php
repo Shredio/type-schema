@@ -2,26 +2,27 @@
 
 namespace Tests\Unit\Mapper;
 
-use Shredio\TypeSchema\Mapper\BackedEnumMapper;
+use Shredio\TypeSchema\Mapper\BackedEnumClassMapper;
+use Shredio\TypeSchema\Types\ClassMapperType;
 use Tests\TypeTestCase;
 
-final class BackedEnumMapperTest extends TypeTestCase
+final class BackedEnumClassMapperTest extends TypeTestCase
 {
 
 	protected function getValidValues(): iterable
 	{
-		yield $this->typeToTest(new BackedEnumMapper(TestBackedStringEnum::class));
+		yield $this->typeToTest(new ClassMapperType(TestBackedStringEnum::class, new BackedEnumClassMapper()));
 		yield 'string enum first value' => TestBackedStringEnum::First;
 		yield 'string enum second value' => TestBackedStringEnum::Second;
 
-		yield $this->typeToTest(new BackedEnumMapper(TestBackedIntEnum::class));
+		yield $this->typeToTest(new ClassMapperType(TestBackedIntEnum::class, new BackedEnumClassMapper()));
 		yield 'int enum first value' => TestBackedIntEnum::Alpha;
 		yield 'int enum second value' => TestBackedIntEnum::Beta;
 	}
 
 	protected function getInvalidValues(): iterable
 	{
-		yield $this->typeToTest(new BackedEnumMapper(TestBackedStringEnum::class), ['backedEnum']);
+		yield $this->typeToTest(new ClassMapperType(TestBackedStringEnum::class, new BackedEnumClassMapper()), ['backedEnum']);
 		yield 'string backing value first' => 'first';
 		yield 'string backing value second' => 'second';
 		yield 'wrong string value' => 'invalid';
@@ -34,7 +35,7 @@ final class BackedEnumMapperTest extends TypeTestCase
 		yield 'stdClass object' => new \stdClass();
 		yield 'different enum type' => TestBackedIntEnum::Alpha;
 
-		yield $this->typeToTest(new BackedEnumMapper(TestBackedIntEnum::class), ['backedEnum']);
+		yield $this->typeToTest(new ClassMapperType(TestBackedIntEnum::class, new BackedEnumClassMapper()), ['backedEnum']);
 		yield 'wrong int value' => 999;
 		yield 'string for int enum' => 'invalid';
 		yield 'different enum type for int' => TestBackedStringEnum::First;

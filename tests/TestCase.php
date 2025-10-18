@@ -5,7 +5,7 @@ namespace Tests;
 use Shredio\TypeSchema\Config\TypeConfig;
 use Shredio\TypeSchema\Conversion\ConversionStrategyFactory;
 use Shredio\TypeSchema\Error\ErrorElement;
-use Shredio\TypeSchema\Mapper\DefaultObjectMapperProvider;
+use Shredio\TypeSchema\Mapper\RegistryClassMapperProvider;
 use Shredio\TypeSchema\Types\Type;
 use Shredio\TypeSchema\TypeSchema;
 use Shredio\TypeSchema\TypeSchemaProcessor;
@@ -21,7 +21,7 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
 		return new TypeSchemaProcessor(
 			new TestConversionStrategy(),
 			new SymfonyErrorElementFactory(new IdentityTranslator()),
-			new DefaultObjectMapperProvider(),
+			new RegistryClassMapperProvider(RegistryClassMapperProvider::createDefaultClassMappers()),
 		);
 	}
 

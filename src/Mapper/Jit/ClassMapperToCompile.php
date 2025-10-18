@@ -7,7 +7,7 @@ use Shredio\TypeSchema\Types\Type;
 /**
  * @template T of object
  */
-final readonly class ObjectMapperToCompile
+final readonly class ClassMapperToCompile
 {
 
 	/**

@@ -2,14 +2,14 @@
 
 namespace Shredio\TypeSchema\Mapper\Jit;
 
-interface ObjectMapperCompileInfoProvider
+interface ClassMapperCompileTargetProvider
 {
 
 	/**
 	 * @template T of object
 	 * @param class-string<T> $className
-	 * @return ObjectMapperToCompile<T>
+	 * @return ClassMapperToCompile<T>
 	 */
-	public function provide(string $className): ObjectMapperToCompile;
+	public function provide(string $className): ClassMapperToCompile;
 
 }

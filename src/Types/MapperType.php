@@ -4,7 +4,7 @@ namespace Shredio\TypeSchema\Types;
 
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
-use Shredio\TypeSchema\Exception\ObjectMapperNotFoundException;
+use Shredio\TypeSchema\Exception\ClassMapperNotFoundException;
 
 /**
  * @template T of object
@@ -24,9 +24,9 @@ final readonly class MapperType extends Type
 
 	public function parse(mixed $valueToParse, TypeContext $context): mixed
 	{
-		$mapper = $context->objectMapperProvider->provide($this->className);
+		$mapper = $context->classMapperProvider->provide($this->className);
 		if ($mapper === null) {
-			throw new ObjectMapperNotFoundException($this->className);
+			throw new ClassMapperNotFoundException($this->className);
 		}
 
 		return $mapper->parse($valueToParse, $context);
@@ -34,9 +34,9 @@ final readonly class MapperType extends Type
 
 	protected function getTypeNode(TypeContext $context): TypeNode
 	{
-		$mapper = $context->objectMapperProvider->provide($this->className);
+		$mapper = $context->classMapperProvider->provide($this->className);
 		if ($mapper === null) {
-			throw new ObjectMapperNotFoundException($this->className);
+			throw new ClassMapperNotFoundException($this->className);
 		}
 
 		return $mapper->getTypeNode($context);

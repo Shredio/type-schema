@@ -2,16 +2,16 @@
 
 namespace Shredio\TypeSchema\Mapper\Jit;
 
-use Shredio\TypeSchema\Mapper\ObjectMapperProvider;
+use Shredio\TypeSchema\Mapper\ClassMapperProvider;
 use Shredio\TypeSchema\Types\Type;
 
-final readonly class JustInTimeObjectMapperProvider implements ObjectMapperProvider
+final readonly class JustInTimeClassMapperProvider implements ClassMapperProvider
 {
 
 	public function __construct(
-		private ObjectMapperCompileInfoProvider $objectMapperCompileInfoProvider,
-		private ?ObjectMapperProvider $innerProvider,
-		private ?ObjectMapperCompiler $compiler,
+		private ClassMapperCompileTargetProvider $objectMapperCompileInfoProvider,
+		private ?ClassMapperProvider $innerProvider,
+		private ?ClassMapperCompiler $compiler,
 		private bool $raiseWarningsOnMissingClasses = false,
 	)
 	{
@@ -57,12 +57,16 @@ final readonly class JustInTimeObjectMapperProvider implements ObjectMapperProvi
 	}
 
 	/**
-	 * @param ObjectMapperToCompile<object> $mapperToCompile
+	 * @param ClassMapperToCompile<object> $mapperToCompile
 	 */
-	private function needsToCompile(ObjectMapperToCompile $mapperToCompile): bool
+	private function needsToCompile(ClassMapperToCompile $mapperToCompile): bool
 	{
 		if ($this->compiler === null) {
-			return true;
+			return false;
+		}
+
+		if ($this->innerProvider !== null && $this->innerProvider->provide($mapperToCompile->className) !== null) {
+			return false;
 		}
 
 		if ($this->compiler->needsRecompile($mapperToCompile)) {

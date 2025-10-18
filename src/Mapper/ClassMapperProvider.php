@@ -4,7 +4,7 @@ namespace Shredio\TypeSchema\Mapper;
 
 use Shredio\TypeSchema\Types\Type;
 
-interface ObjectMapperProvider
+interface ClassMapperProvider
 {
 
 	/**
