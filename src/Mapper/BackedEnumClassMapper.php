@@ -34,7 +34,10 @@ final readonly class BackedEnumClassMapper extends ClassMapper
 
 			$backedEnum = $className::tryFrom($value);
 			if ($backedEnum === null) {
-				return $context->errorElementFactory->invalidType($this->createDefinition($className), $valueToParse); // TODO: invalidCase instead of invalidType
+				return $context->errorElementFactory->valueNotInAllowedValues($this->createDefinition($className), $value, array_map(
+					fn (BackedEnum $case): int|string => $case->value,
+					$className::cases(),
+				));
 			}
 
 			return $backedEnum;
@@ -48,7 +51,10 @@ final readonly class BackedEnumClassMapper extends ClassMapper
 
 			$backedEnum = $className::tryFrom($value);
 			if ($backedEnum === null) {
-				return $context->errorElementFactory->invalidType($this->createDefinition($className), $valueToParse); // TODO: invalidCase instead of invalidType
+				return $context->errorElementFactory->valueNotInAllowedValues($this->createDefinition($className), $value, array_map(
+					fn (BackedEnum $case): int|string => $case->value,
+					$className::cases(),
+				));
 			}
 
 			return $backedEnum;

@@ -24,6 +24,11 @@ interface ErrorElementFactory
 
 	public function invalidValue(TypeDefinition $definition, mixed $value, string $messageForDeveloper): ErrorElement;
 
+	/**
+	 * @param list<string|int> $allowedValues
+	 */
+	public function valueNotInAllowedValues(TypeDefinition $definition, string|int $value, array $allowedValues): ErrorElement;
+
 	public function notEmpty(TypeDefinition $definition, mixed $value): ErrorMessage;
 
 	public function numberRange(

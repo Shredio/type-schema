@@ -74,6 +74,17 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 		);
 	}
 
+	/**
+	 * @param list<string|int> $allowedValues
+	 */
+	public function valueNotInAllowedValues(TypeDefinition $definition, string|int $value, array $allowedValues): ErrorElement
+	{
+		return new ErrorMessage(
+			$this->translator->trans('The value you selected is not a valid choice.', [], $this->domain),
+			DeveloperValidationMessageFactory::valueNotInAllowedValues($definition, $value, $allowedValues),
+		);
+	}
+
 	public function notEmpty(TypeDefinition $definition, mixed $value): ErrorMessage
 	{
 		return new ErrorMessage(

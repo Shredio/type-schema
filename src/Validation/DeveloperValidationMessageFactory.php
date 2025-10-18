@@ -57,6 +57,20 @@ final readonly class DeveloperValidationMessageFactory
 		return sprintf('Value should not be empty, %s given.', self::describeValue($value));
 	}
 
+	/**
+	 * @param list<string|int> $allowedValues
+	 */
+	public static function valueNotInAllowedValues(TypeDefinition $definition, int|string $value, array $allowedValues): string
+	{
+		$stringAllowedValues = self::selectOnlyStrings($allowedValues);
+		return sprintf(
+			'Value %s is not a valid choice%s%s',
+			self::describeValue($value),
+			self::didYouMean($stringAllowedValues, $value),
+			self::possibleValues($stringAllowedValues, 150, ' '),
+		);
+	}
+
 	public static function numberRangeDecision(
 		TypeDefinition $definition,
 		mixed $value,
@@ -121,6 +135,92 @@ final readonly class DeveloperValidationMessageFactory
 		}
 
 		return get_debug_type($value);
+	}
+
+	/**
+	 * @param list<string> $possibleValues
+	 * @param mixed $value
+	 */
+	public static function didYouMean(array $possibleValues, mixed $value): string
+	{
+		if (!is_string($value)) {
+			return '.';
+		}
+
+		$suggestion = self::getSuggestion($possibleValues, $value);
+		if ($suggestion === null) {
+			return '.';
+		}
+
+		return sprintf(', did you mean %s?', self::describeValue($suggestion));
+	}
+
+	/**
+	 * @param list<string> $possibleValues
+	 */
+	public static function possibleValues(array $possibleValues, int $maxLength, string $before = ''): string
+	{
+		$lastKey = array_key_last($possibleValues);
+		if ($lastKey === null) {
+			return '';
+		}
+
+		$lastValue = $possibleValues[$lastKey];
+		unset($possibleValues[$lastKey]);
+
+		if ($possibleValues === []) {
+			return $before . sprintf('Possible value is %s.', self::describeValue($lastValue));
+		}
+
+		$str = $before . sprintf(
+			'Possible values are %s or %s.',
+			implode(', ', array_map(fn(string $v): string => self::describeValue($v), $possibleValues)),
+			self::describeValue($lastValue),
+		);
+
+		if (strlen($str) > $maxLength) {
+			return '';
+		}
+
+		return $str;
+	}
+
+	/**
+	 * @param list<string> $possibleValues
+	 * @param string $value
+	 */
+	public static function getSuggestion(array $possibleValues, string $value): ?string
+	{
+		if ($possibleValues === []) {
+			return null;
+		}
+
+		$best = null;
+		$min = (strlen($value) / 4 + 1) * 10 + .1;
+		foreach ($possibleValues as $item) {
+			if ($value && ($len = levenshtein($item, $value, 10, 11, 10)) < $min) {
+				$min = $len;
+				$best = $item;
+			}
+		}
+
+		return $best;
+	}
+
+	/**
+	 * @param array<mixed> $items
+	 * @return list<string>
+	 */
+	private static function selectOnlyStrings(array $items): array
+	{
+		$return = [];
+		foreach ($items as $item) {
+			if (is_string($item)) {
+				$return[] = $item;
+			}
+		}
+
+		return $return;
 	}
 
 }
