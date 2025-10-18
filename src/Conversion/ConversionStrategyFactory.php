@@ -6,6 +6,7 @@ use Shredio\TypeSchema\Conversion\Converter\Array\LenientArrayConverter;
 use Shredio\TypeSchema\Conversion\Converter\Array\StrictArrayConverter;
 use Shredio\TypeSchema\Conversion\Converter\Bool\LenientBoolConverter;
 use Shredio\TypeSchema\Conversion\Converter\Bool\StrictBoolConverter;
+use Shredio\TypeSchema\Conversion\Converter\Bool\StringBoolConverter;
 use Shredio\TypeSchema\Conversion\Converter\Null\LenientNullConverter;
 use Shredio\TypeSchema\Conversion\Converter\Null\StrictNullConverter;
 use Shredio\TypeSchema\Conversion\Converter\Number\JsonNumberConverter;
@@ -22,6 +23,7 @@ final class ConversionStrategyFactory
 	private static ?ConfigurableConversionStrategy $strictStrategy = null;
 	private static ?ConfigurableConversionStrategy $lenientStrategy = null;
 	private static ?ConfigurableConversionStrategy $jsonStrategy = null;
+	private static ?ConfigurableConversionStrategy $csvStrategy = null;
 
 	public static function strict(): ConversionStrategy
 	{
@@ -57,6 +59,23 @@ final class ConversionStrategyFactory
 			new LenientArrayConverter(),
 			new LenientObjectSupervisor(),
 		);
+	}
+
+	public static function csv(): ConversionStrategy
+	{
+		return self::$csvStrategy ??= new ConfigurableConversionStrategy(
+			new StrictStringConverter(),
+			new LenientNumberConverter(),
+			new StringBoolConverter(),
+			new LenientNullConverter(),
+			new LenientArrayConverter(),
+			new LenientObjectSupervisor(),
+		);
+	}
+
+	public static function httpGet(): ConversionStrategy
+	{
+		return self::csv();
 	}
 
 }
