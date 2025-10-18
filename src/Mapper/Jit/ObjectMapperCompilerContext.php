@@ -34,7 +34,7 @@ final readonly class ObjectMapperCompilerContext
 	 * @param class-string<T> $className
 	 * @return ClassMapperToCompile<T>
 	 */
-	public function createObjectMapperToCompile(string $className): ClassMapperToCompile
+	public function createClassMapperToCompile(string $className): ClassMapperToCompile
 	{
 		return $this->compileInfoProvider->provide($className);
 	}
