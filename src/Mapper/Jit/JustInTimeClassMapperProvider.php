@@ -30,6 +30,10 @@ final readonly class JustInTimeClassMapperProvider implements ClassMapperProvide
 		}
 
 		$mapperToCompile = $this->objectMapperCompileInfoProvider->provide($className);
+		if (class_exists($mapperToCompile->mapperClassName, false)) { // Prevents "Cannot redeclare class" errors
+			return new ($mapperToCompile->mapperClassName)();
+		}
+
 		if ($this->compiler !== null && $this->needsToCompile($mapperToCompile)) {
 			if ($this->raiseWarningsOnMissingClasses) {
 				trigger_error(
