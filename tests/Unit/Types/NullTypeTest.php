@@ -10,7 +10,7 @@ final class NullTypeTest extends TypeTestCase
 
 	protected function getValidValues(): iterable
 	{
-		yield $this->typeToTest(new NullType());
+		yield $this->typeToTest(new NullType(), ['null']);
 		yield 'null value' => null;
 	}
 
