@@ -17,14 +17,25 @@ final readonly class TypeHierarchyConfig
 	/**
 	 * @param array<string, TypeConfig|array<string, TypeConfig|mixed[]>> $values
 	 */
-	public static function fromArray(array $values): self
+	public static function fromArray(array $values): ?self
 	{
-		return new self(array_map(
-			fn (TypeConfig|array $vals): TypeConfig|TypeHierarchyConfig => $vals instanceof TypeConfig
-				? $vals
-				: self::fromArray($vals), // @phpstan-ignore argument.type (phpstan does not support recursive types)
-			$values,
-		));
+		$vals = [];
+		foreach ($values as $key => $val) {
+			if ($val instanceof TypeConfig) {
+				$vals[$key] = $val;
+			} else {
+				$maybeHierarchy = self::fromArray($val); // @phpstan-ignore argument.type (phpstan does not support recursive types)
+				if ($maybeHierarchy !== null) {
+					$vals[$key] = $maybeHierarchy;
+				}
+			}
+		}
+
+		if ($vals === []) {
+			return null;
+		}
+
+		return new self($vals);
 	}
 
 }
