@@ -25,6 +25,8 @@
 		"phpstan/phpstan": "^2.1",
 		"phpunit/phpunit": "^12.3",
 		"nette/utils": "^4.0",
-		"symfony/translation": "^7.3"
+		"symfony/translation": "^7.3",
+		"symfony/dependency-injection": "^7.3",
+		"symfony/http-kernel": "^7.3"
 	}
 }
