@@ -5,7 +5,9 @@ namespace Shredio\TypeSchema\Mapper;
 use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
+use PHPStan\PhpDocParser\Ast\Type\UnionTypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
+use Shredio\TypeSchema\Helper\NumberExclusiveRange;
 use Shredio\TypeSchema\Mapper\Options\DateTimeOptions;
 
 /**
@@ -31,9 +33,9 @@ final readonly class DateTimeClassMapper extends ClassMapper
 
 	public function create(string $className, mixed $valueToParse, TypeContext $context): object
 	{
-		if (is_string($valueToParse)) {
-			$options = $context->getOption(DateTimeOptions::class) ?? new DateTimeOptions();
+		$options = $context->getOption(DateTimeOptions::class) ?? new DateTimeOptions();
 
+		if (is_string($valueToParse)) {
 			foreach ($options->formats as $format) {
 				$ret = $this->className::createFromFormat($format, $valueToParse, $options->timeZone);
 				if ($ret !== false) {
@@ -47,17 +49,32 @@ final readonly class DateTimeClassMapper extends ClassMapper
 					return $this->className::createFromInterface($dateTime);
 				}
 			}
-		}
-
-		if (is_int($valueToParse) && $valueToParse > 0) {
-			$options = $context->getOption(DateTimeOptions::class) ?? new DateTimeOptions();
-			if ($options->allowIntAsTimestamp) {
-				$dateTime = (new DateTime())->setTimestamp($valueToParse);
-				return $this->className::createFromInterface($dateTime);
+		} else if (is_int($valueToParse)) {
+			if (!$options->allowIntAsTimestamp) {
+				return $context->errorElementFactory->invalidType($this->createNamedDefinition('string'), $valueToParse);
 			}
+
+			if ($valueToParse < 0) {
+				$range = NumberExclusiveRange::fromInts(0);
+				return $context->errorElementFactory->numberRange(
+					$this->createNamedDefinition('int'),
+					$valueToParse,
+					$range,
+					$range->decide($valueToParse),
+				);
+			}
+
+			$dateTime = (new DateTime())->setTimestamp($valueToParse);
+			return $this->className::createFromInterface($dateTime);
 		}
 
-		return $context->errorElementFactory->invalidType($this->createDefinition($className), $valueToParse);
+		if ($options->allowIntAsTimestamp) {
+			$def = $this->createUnionNamedDefinition('string', 'int');
+		} else {
+			$def = $this->createNamedDefinition('string');
+		}
+
+		return $context->errorElementFactory->invalidType($def, $valueToParse);
 	}
 
 }

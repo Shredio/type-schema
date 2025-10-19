@@ -26,7 +26,12 @@ final readonly class BackedEnumClassMapper extends ClassMapper
 		$backingValueType = EnumHelper::getBackingValueType($className);
 		if ($backingValueType === EnumHelper::UnknownType) {
 			$reflection = new ReflectionEnum($className);
-			$def = $this->createNamedDefinition($reflection->getBackingType()?->getName() ?? 'string');
+			$backingType = $reflection->getBackingType()?->getName();
+			if ($backingType === '' || $backingType === null) {
+				$backingType = 'string'; // This should not happen
+			}
+
+			$def = $this->createNamedDefinition($backingType);
 			return $context->errorElementFactory->invalidType($def, $valueToParse);
 		}
 
