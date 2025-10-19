@@ -3,18 +3,24 @@
 namespace Shredio\TypeSchema\Mapper\Jit;
 
 use Shredio\TypeSchema\Mapper\ClassMapperProvider;
+use Shredio\TypeSchema\Mapper\WarmableClassMapperProvider;
 use Shredio\TypeSchema\Types\Type;
 
-final readonly class JustInTimeClassMapperProvider implements ClassMapperProvider
+final readonly class JustInTimeClassMapperProvider implements WarmableClassMapperProvider
 {
 
 	public function __construct(
 		private ClassMapperCompileTargetProvider $objectMapperCompileInfoProvider,
-		private ?ClassMapperProvider $innerProvider,
-		private ?ClassMapperCompiler $compiler,
+		private ClassMapperCompiler $compiler,
+		private ?ClassMapperProvider $innerProvider = null,
 		private bool $raiseWarningsOnMissingClasses = false,
 	)
 	{
+	}
+
+	public function warmup(string $className, bool $forceRecompile = true): void
+	{
+		$this->create($this->compiler->withMultiProcessSafety(false), $className, false, $forceRecompile);
 	}
 
 	/**
@@ -23,6 +29,21 @@ final readonly class JustInTimeClassMapperProvider implements ClassMapperProvide
 	 * @return Type<T>
 	 */
 	public function provide(string $className): Type
+	{
+		return $this->create($this->compiler, $className, $this->raiseWarningsOnMissingClasses);
+	}
+
+	/**
+	 * @template T of object
+	 * @param class-string<T> $className
+	 * @return Type<T>
+	 */
+	private function create(
+		ClassMapperCompiler $compiler,
+		string $className,
+		bool $raiseWarningsOnMissingClasses,
+		bool $forceRecompile = false,
+	): Type
 	{
 		$mapper = $this->innerProvider?->provide($className);
 		if ($mapper !== null) {
@@ -34,8 +55,9 @@ final readonly class JustInTimeClassMapperProvider implements ClassMapperProvide
 			return new ($mapperToCompile->mapperClassName)();
 		}
 
-		if ($this->compiler !== null && $this->needsToCompile($mapperToCompile)) {
-			if ($this->raiseWarningsOnMissingClasses) {
+		$needsToCompile = $this->needsToCompileFunction($forceRecompile);
+		if ($needsToCompile($mapperToCompile)) {
+			if ($raiseWarningsOnMissingClasses) {
 				trigger_error(
 					sprintf(
 						'Class %s is being compiled just-in-time. Consider pre-compiling it to improve performance.',
@@ -47,10 +69,10 @@ final readonly class JustInTimeClassMapperProvider implements ClassMapperProvide
 
 			$context = new ObjectMapperCompilerContext(
 				$this->objectMapperCompileInfoProvider,
-				$this->needsToCompile(...),
+				$needsToCompile,
 			);
 
-			$this->compiler->compile($mapperToCompile, $context);
+			$compiler->compile($mapperToCompile, $context);
 		}
 
 		if ((@include $mapperToCompile->targetFilePath) !== false) { // @ file may not exist
@@ -61,23 +83,25 @@ final readonly class JustInTimeClassMapperProvider implements ClassMapperProvide
 	}
 
 	/**
-	 * @param ClassMapperToCompile<object> $mapperToCompile
+	 * @return callable(ClassMapperToCompile<object> $mapperToCompile): bool
 	 */
-	private function needsToCompile(ClassMapperToCompile $mapperToCompile): bool
+	private function needsToCompileFunction(bool $forceRecompile): callable
 	{
-		if ($this->compiler === null) {
-			return false;
-		}
+		return function (ClassMapperToCompile $mapperToCompile) use ($forceRecompile): bool {
+			if ($this->innerProvider !== null && $this->innerProvider->provide($mapperToCompile->className) !== null) {
+				return false;
+			}
 
-		if ($this->innerProvider !== null && $this->innerProvider->provide($mapperToCompile->className) !== null) {
-			return false;
-		}
+			if ($forceRecompile) {
+				return true;
+			}
 
-		if ($this->compiler->needsRecompile($mapperToCompile)) {
-			return true;
-		}
+			if ($this->compiler->needsRecompile($mapperToCompile)) {
+				return true;
+			}
 
-		return !file_exists($mapperToCompile->targetFilePath);
+			return !file_exists($mapperToCompile->targetFilePath);
+		};
 	}
 
 }
