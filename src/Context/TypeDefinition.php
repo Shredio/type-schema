@@ -12,10 +12,10 @@ final class TypeDefinition
 	private mixed $typeNode;
 
 	/**
-	 * @param callable(): TypeNode $typeNode
+	 * @param (callable(): TypeNode)|TypeNode $typeNode
 	 */
 	public function __construct(
-		callable $typeNode,
+		callable|TypeNode $typeNode,
 	)
 	{
 		$this->typeNode = $typeNode;

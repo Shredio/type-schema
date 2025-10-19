@@ -3,8 +3,10 @@
 namespace Shredio\TypeSchema\Mapper;
 
 use BackedEnum;
+use ReflectionEnum;
 use Shredio\TypeSchema\Context\TypeContext;
 use Shredio\TypeSchema\Error\ErrorElement;
+use Shredio\TypeSchema\Exception\LogicException;
 use Shredio\TypeSchema\Helper\EnumHelper;
 
 /**
@@ -23,18 +25,20 @@ final readonly class BackedEnumClassMapper extends ClassMapper
 	{
 		$backingValueType = EnumHelper::getBackingValueType($className);
 		if ($backingValueType === EnumHelper::UnknownType) {
-			return $context->errorElementFactory->invalidType($this->createDefinition($className), $valueToParse);
+			$reflection = new ReflectionEnum($className);
+			$def = $this->createNamedDefinition($reflection->getBackingType()?->getName() ?? 'string');
+			return $context->errorElementFactory->invalidType($def, $valueToParse);
 		}
 
 		if ($backingValueType === EnumHelper::StringType) {
 			$value = $context->conversionStrategy->string($valueToParse);
 			if ($value === null) {
-				return $context->errorElementFactory->invalidType($this->createDefinition($className), $valueToParse);
+				return $context->errorElementFactory->invalidType($this->createNamedDefinition('string'), $valueToParse);
 			}
 
 			$backedEnum = $className::tryFrom($value);
 			if ($backedEnum === null) {
-				return $context->errorElementFactory->valueNotInAllowedValues($this->createDefinition($className), $value, array_map(
+				return $context->errorElementFactory->valueNotInAllowedValues($this->createNamedDefinition('string'), $value, array_map(
 					fn (BackedEnum $case): int|string => $case->value,
 					$className::cases(),
 				));
@@ -46,12 +50,12 @@ final readonly class BackedEnumClassMapper extends ClassMapper
 		if ($backingValueType === EnumHelper::IntType) {
 			$value = $context->conversionStrategy->int($valueToParse);
 			if ($value === null) {
-				return $context->errorElementFactory->invalidType($this->createDefinition($className), $valueToParse);
+				return $context->errorElementFactory->invalidType($this->createNamedDefinition('int'), $valueToParse);
 			}
 
 			$backedEnum = $className::tryFrom($value);
 			if ($backedEnum === null) {
-				return $context->errorElementFactory->valueNotInAllowedValues($this->createDefinition($className), $value, array_map(
+				return $context->errorElementFactory->valueNotInAllowedValues($this->createNamedDefinition('int'), $value, array_map(
 					fn (BackedEnum $case): int|string => $case->value,
 					$className::cases(),
 				));
@@ -60,7 +64,7 @@ final readonly class BackedEnumClassMapper extends ClassMapper
 			return $backedEnum;
 		}
 
-		return $context->errorElementFactory->invalidType($this->createDefinition($className), $valueToParse);
+		throw new LogicException(sprintf('Invalid BackedEnum %s.', $className)); // this should not happen
 	}
 
 }

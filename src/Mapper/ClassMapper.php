@@ -3,6 +3,7 @@
 namespace Shredio\TypeSchema\Mapper;
 
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
+use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
 use Shredio\TypeSchema\Context\TypeDefinition;
 use Shredio\TypeSchema\Error\ErrorElement;
@@ -24,13 +25,14 @@ abstract readonly class ClassMapper
 	 */
 	abstract public function create(string $className, mixed $valueToParse, TypeContext $context): object;
 
-	/**
-	 * @param class-string<T> $className
-	 * @return TypeDefinition
-	 */
-	final protected function createDefinition(string $className): TypeDefinition
+	final protected function createDefinition(TypeNode $typeNode): TypeDefinition
 	{
-		return new TypeDefinition(fn (): IdentifierTypeNode => new IdentifierTypeNode($className));
+		return new TypeDefinition($typeNode);
+	}
+
+	final protected function createNamedDefinition(string $name): TypeDefinition
+	{
+		return new TypeDefinition(new IdentifierTypeNode($name));
 	}
 
 }
