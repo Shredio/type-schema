@@ -8,9 +8,9 @@ final class ClassMapperNotFoundException extends \LogicException
 	/**
 	 * @param class-string $className
 	 */
-	public function __construct(string $className)
+	public static function notFound(string $className): self
 	{
-		parent::__construct(sprintf('Class mapper for class "%s" not found.', $className));
+		return new self(sprintf('Class mapper for class "%s" not found.', $className));
 	}
 
 }

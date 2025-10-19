@@ -26,7 +26,7 @@ final readonly class MapperType extends Type
 	{
 		$mapper = $context->classMapperProvider->provide($this->className);
 		if ($mapper === null) {
-			throw new ClassMapperNotFoundException($this->className);
+			throw ClassMapperNotFoundException::notFound($this->className);
 		}
 
 		return $mapper->parse($valueToParse, $context);
@@ -36,7 +36,7 @@ final readonly class MapperType extends Type
 	{
 		$mapper = $context->classMapperProvider->provide($this->className);
 		if ($mapper === null) {
-			throw new ClassMapperNotFoundException($this->className);
+			throw ClassMapperNotFoundException::notFound($this->className);
 		}
 
 		return $mapper->getTypeNode($context);
