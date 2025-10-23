@@ -8,13 +8,11 @@ use Shredio\TypeSchema\Conversion\ConversionStrategy;
 use Shredio\TypeSchema\Conversion\ConversionStrategyFactory;
 use Shredio\TypeSchema\Error\ErrorElement;
 use Shredio\TypeSchema\Exception\AssertException;
-use Shredio\TypeSchema\Exception\LogicException;
 use Shredio\TypeSchema\Mapper\ClassMapperProvider;
 use Shredio\TypeSchema\Mapper\RegistryClassMapperProvider;
 use Shredio\TypeSchema\Types\Type;
+use Shredio\TypeSchema\Validation\EnglishErrorElementFactory;
 use Shredio\TypeSchema\Validation\ErrorElementFactory;
-use Shredio\TypeSchema\Validation\SymfonyErrorElementFactory;
-use Symfony\Component\Translation\IdentityTranslator;
 
 final readonly class TypeSchemaProcessor
 {
@@ -33,13 +31,9 @@ final readonly class TypeSchemaProcessor
 		?ClassMapperProvider $classMapperProvider = null,
 	): self
 	{
-		if (!class_exists(IdentityTranslator::class)) {
-			throw new LogicException('You need to install symfony/translation to use the default TypeSchemaProcessor');
-		}
-
 		return new self(
 			$conversionStrategy ?? ConversionStrategyFactory::strict(),
-			$errorElementFactory ?? new SymfonyErrorElementFactory(new IdentityTranslator()),
+			$errorElementFactory ?? new EnglishErrorElementFactory(),
 			$classMapperProvider ?? new RegistryClassMapperProvider(RegistryClassMapperProvider::createDefaultClassMappers()),
 		);
 	}

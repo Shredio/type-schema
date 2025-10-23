@@ -11,37 +11,25 @@ use Shredio\TypeSchema\Helper\NumberInclusiveRange;
 use Shredio\TypeSchema\Helper\NumberRange;
 use Shredio\TypeSchema\Helper\RangeExclusiveDecision;
 use Shredio\TypeSchema\Helper\RangeInclusiveDecision;
-use Symfony\Contracts\Translation\TranslatorInterface;
 
-final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
+final readonly class EnglishErrorElementFactory implements ErrorElementFactory
 {
-
-	public function __construct(
-		private TranslatorInterface $translator,
-		private string $domain = 'validators',
-	)
-	{
-	}
 
 	public function invalidType(TypeDefinition $definition, mixed $value): ErrorInvalidType
 	{
 		return new ErrorInvalidType($definition, function (?string $userType): string {
 			if ($userType !== null) {
-				return $this->translator->trans(
-					'This value should be of type {{ type }}.',
-					['{{ type }}' => $userType],
-					$this->domain,
-				);
+				return sprintf('Please provide a valid %s.', $userType);
 			}
 
-			return $this->translator->trans('This value is not valid.', [], $this->domain);
+			return 'The provided value is not valid.';
 		}, $value);
 	}
 
 	public function missingField(TypeDefinition $definition): ErrorElement
 	{
 		return new ErrorMessage(
-			$this->translator->trans('This field is missing.', [], $this->domain),
+			'Please provide a value for this field.',
 			DeveloperValidationMessageFactory::missingField($definition),
 		);
 	}
@@ -49,7 +37,7 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 	public function extraField(TypeDefinition $definition): ErrorElement
 	{
 		return new ErrorMessage(
-			$this->translator->trans('This field was not expected.', [], $this->domain),
+			'This field is not allowed.',
 			DeveloperValidationMessageFactory::extraField($definition),
 		);
 	}
@@ -57,11 +45,7 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 	public function equalTo(TypeDefinition $definition, mixed $value, string $expected): ErrorElement
 	{
 		return new ErrorMessage(
-			$this->translator->trans(
-				'This value should be equal to {{ compared_value }}.',
-				['compared_value' => $expected],
-				$this->domain,
-			),
+			sprintf('Must be equal to %s.', $expected),
 			DeveloperValidationMessageFactory::equalTo($definition, $value, $expected),
 		);
 	}
@@ -69,7 +53,7 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 	public function invalidValue(TypeDefinition $definition, mixed $value, string $messageForDeveloper): ErrorElement
 	{
 		return new ErrorMessage(
-			$this->translator->trans('This value is not valid.', [], $this->domain),
+			'The provided value is not valid.',
 			$messageForDeveloper,
 		);
 	}
@@ -80,7 +64,7 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 	public function valueNotInAllowedValues(TypeDefinition $definition, string|int $value, array $allowedValues): ErrorElement
 	{
 		return new ErrorMessage(
-			$this->translator->trans('The value you selected is not a valid choice.', [], $this->domain),
+			'Please choose one of the allowed values.',
 			DeveloperValidationMessageFactory::valueNotInAllowedValues($definition, $value, $allowedValues),
 		);
 	}
@@ -88,7 +72,7 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 	public function notEmpty(TypeDefinition $definition, mixed $value): ErrorMessage
 	{
 		return new ErrorMessage(
-			$this->translator->trans('This value should be blank.', [], $this->domain),
+			'This value must be empty.',
 			DeveloperValidationMessageFactory::notEmpty($definition, $value),
 		);
 	}
@@ -106,27 +90,23 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 		}
 
 		$userMessage = match ($decision) {
-			RangeExclusiveDecision::ShouldBeGreater => $this->translator->trans(
-				'This value should be greater than {{ compared_value }}.',
-				['{{ compared_value }}' => $range->getMin()],
-				$this->domain,
+			RangeExclusiveDecision::ShouldBeGreater => sprintf(
+				'Must be greater than %s.',
+				$range->getMin(),
 			),
-			RangeInclusiveDecision::ShouldBeGreaterOrEqual => $this->translator->trans(
-				'This value should be greater than or equal to {{ compared_value }}.',
-				['{{ compared_value }}' => $range->getMin()],
-				$this->domain,
+			RangeInclusiveDecision::ShouldBeGreaterOrEqual => sprintf(
+				'Must be at least %s.',
+				$range->getMin(),
 			),
-			RangeExclusiveDecision::ShouldBeLess => $this->translator->trans(
-				'This value should be less than {{ compared_value }}.',
-				['{{ compared_value }}' => $range->getMax()],
-				$this->domain,
+			RangeExclusiveDecision::ShouldBeLess => sprintf(
+				'Must be less than %s.',
+				$range->getMax(),
 			),
-			RangeInclusiveDecision::ShouldBeLessOrEqual => $this->translator->trans(
-				'This value should be less than or equal to {{ compared_value }}.',
-				['{{ compared_value }}' => $range->getMax()],
-				$this->domain,
+			RangeInclusiveDecision::ShouldBeLessOrEqual => sprintf(
+				'Must be at most %s.',
+				$range->getMax(),
 			),
-			default => throw new InvalidArgumentException('Unknown RangeDecision: ' . $decision->name), // should not happen
+			default => throw new InvalidArgumentException('Unknown RangeDecision: ' . $decision->name),
 		};
 		$developerMessage = DeveloperValidationMessageFactory::numberRangeDecision($definition, $value, $range, $decision);
 
@@ -138,35 +118,24 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 		$exactLimit = $range->getExactValue();
 		$developerMessage = DeveloperValidationMessageFactory::itemCountRange($definition, $count, $range, $decision);
 		if ($exactLimit !== null) {
-			$userMessage = $this->translator->trans(
-				'This collection should contain exactly {{ limit }} element.|This collection should contain exactly {{ limit }} elements.',
-				['{{ limit }}' => $exactLimit],
-				$this->domain,
-			);
+			$userMessage = $exactLimit === 1
+				? 'Must contain exactly 1 item.'
+				: sprintf('Must contain exactly %d items.', $exactLimit);
 
 			return new ErrorMessage($userMessage, $developerMessage);
 		}
 
 		$userMessage = match ($decision) {
-			RangeInclusiveDecision::ShouldBeGreaterOrEqual => $this->translator->trans(
-				'This collection should contain {{ limit }} element or more.|This collection should contain {{ limit }} elements or more.',
-				['{{ limit }}' => $range->getMin()],
-				$this->domain,
-			),
-			RangeInclusiveDecision::ShouldBeLessOrEqual => $this->translator->trans(
-				'This collection should contain {{ limit }} element or less.|This collection should contain {{ limit }} elements or less.',
-				['{{ limit }}' => $range->getMax()],
-				$this->domain,
-			),
-			default => throw new InvalidArgumentException(
-				'Unknown RangeDecision: ' . $decision->name
-			), // should not happen
+			RangeInclusiveDecision::ShouldBeGreaterOrEqual => $range->getMin() === 1
+				? 'Must contain at least 1 item.'
+				: sprintf('Must contain at least %d items.', $range->getMin()),
+			RangeInclusiveDecision::ShouldBeLessOrEqual => $range->getMax() === 1
+				? 'Must contain at most 1 item.'
+				: sprintf('Must contain at most %d items.', $range->getMax()),
+			default => throw new InvalidArgumentException('Unknown RangeDecision: ' . $decision->name),
 		};
 
 		return new ErrorMessage($userMessage, $developerMessage);
 	}
-
-
-
 
 }
