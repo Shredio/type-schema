@@ -61,7 +61,7 @@ final class TypeSchemaBundle extends AbstractBundle
 	}
 
 	/**
-	 * @param class-string<ClassMapper<object>> $className
+	 * @param class-string<ClassMapper<covariant object>> $className
 	 */
 	private function registerClassMapper(ServicesConfigurator $services, string $name, string $className): void
 	{
