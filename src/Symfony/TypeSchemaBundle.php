@@ -4,13 +4,16 @@ namespace Shredio\TypeSchema\Symfony;
 
 use Shredio\TypeSchema\Conversion\ConversionStrategy;
 use Shredio\TypeSchema\Conversion\ConversionStrategyFactory;
+use Shredio\TypeSchema\Mapper\BackedEnumClassMapper;
 use Shredio\TypeSchema\Mapper\ClassMapper;
 use Shredio\TypeSchema\Mapper\ClassMapperProvider;
+use Shredio\TypeSchema\Mapper\DateTimeClassMapper;
 use Shredio\TypeSchema\Mapper\RegistryClassMapperProvider;
 use Shredio\TypeSchema\TypeSchemaProcessor;
 use Shredio\TypeSchema\Validation\SymfonyErrorElementFactory;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\DependencyInjection\Loader\Configurator\ServicesConfigurator;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
@@ -39,6 +42,9 @@ final class TypeSchemaBundle extends AbstractBundle
 			->arg('$mappers', tagged_iterator(self::ClassMapperTag))
 			->alias(ClassMapperProvider::class, self::ClassMapperProviderServiceName);
 
+		$this->registerClassMapper($services, 'backed_enum', BackedEnumClassMapper::class);
+		$this->registerClassMapper($services, 'datetime', DateTimeClassMapper::class);
+
 		$services->set($this->prefix('processor'), TypeSchemaProcessor::class)
 			->arg('$conversionStrategy', service($this->prefix('conversion_strategy')))
 			->arg('$errorElementFactory', service($this->prefix('error_element_factory')))
@@ -52,6 +58,15 @@ final class TypeSchemaBundle extends AbstractBundle
 	private function prefix(string $name): string
 	{
 		return sprintf('type_schema.%s', $name);
+	}
+
+	/**
+	 * @param class-string<ClassMapper<object>> $className
+	 */
+	private function registerClassMapper(ServicesConfigurator $services, string $name, string $className): void
+	{
+		$services->set($this->prefix(sprintf('class_mapper.%s', $name)), $className)
+			->tag(self::ClassMapperTag);
 	}
 
 }
