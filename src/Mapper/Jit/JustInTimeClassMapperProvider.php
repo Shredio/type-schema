@@ -3,10 +3,12 @@
 namespace Shredio\TypeSchema\Mapper\Jit;
 
 use Shredio\TypeSchema\Mapper\ClassMapperProvider;
+use Shredio\TypeSchema\Mapper\ValidatableClassMapperProvider;
 use Shredio\TypeSchema\Mapper\WarmableClassMapperProvider;
+use Shredio\TypeSchema\Types\MixedType;
 use Shredio\TypeSchema\Types\Type;
 
-final readonly class JustInTimeClassMapperProvider implements WarmableClassMapperProvider
+final readonly class JustInTimeClassMapperProvider implements WarmableClassMapperProvider, ValidatableClassMapperProvider
 {
 
 	public function __construct(
@@ -16,6 +18,11 @@ final readonly class JustInTimeClassMapperProvider implements WarmableClassMappe
 		private bool $raiseWarningsOnMissingClasses = false,
 	)
 	{
+	}
+
+	public function validate(string $className): void
+	{
+		$this->create($this->compiler->withValidationMode(), $className, false, true, true);
 	}
 
 	public function warmup(string $className, bool $forceRecompile = true): void
@@ -43,6 +50,7 @@ final readonly class JustInTimeClassMapperProvider implements WarmableClassMappe
 		string $className,
 		bool $raiseWarningsOnMissingClasses,
 		bool $forceRecompile = false,
+		bool $validationMode = false,
 	): Type
 	{
 		$mapper = $this->innerProvider?->provide($className);
@@ -73,6 +81,10 @@ final readonly class JustInTimeClassMapperProvider implements WarmableClassMappe
 			);
 
 			$compiler->compile($mapperToCompile, $context);
+		}
+
+		if ($validationMode) {
+			return new MixedType(); // In validation mode, we don't need the actual mapper
 		}
 
 		if ((@include $mapperToCompile->targetFilePath) !== false) { // @ file may not exist

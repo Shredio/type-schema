@@ -23,4 +23,11 @@ interface ClassMapperCompiler
 	 */
 	public function withMultiProcessSafety(bool $enabled): static;
 
+	/**
+	 * Enables validation mode for the current instance.
+	 *
+	 * @return static The current instance with validation mode enabled.
+	 */
+	public function withValidationMode(): static;
+
 }
