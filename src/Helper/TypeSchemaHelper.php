@@ -89,24 +89,28 @@ final readonly class TypeSchemaHelper
 	 *
 	 * @throws UnsupportedTypeException
 	 */
-	public static function fromBuiltInType(string $type, bool $nullable = false): Type
+	public static function fromStringType(string $type, bool $nullable = false): Type
 	{
 		if (!isset(self::SupportedBuiltinTypes[$type])) {
-			throw new UnsupportedTypeException(sprintf('Unsupported builtin type: %s', $type));
-		}
+			if (!class_exists($type) && !enum_exists($type)) {
+				throw new UnsupportedTypeException(sprintf('Unsupported type: %s', $type));
+			}
 
-		if ($type === 'null') {
-			return TypeSchema::get()->null();
-		}
+			$typeObject = TypeSchema::get()->mapper($type);
+		} else {
+			if ($type === 'null') {
+				return TypeSchema::get()->null();
+			}
 
-		$typeObject = match ($type) {
-			'int' => TypeSchema::get()->int(),
-			'float' => TypeSchema::get()->float(),
-			'string' => TypeSchema::get()->string(),
-			'bool' => TypeSchema::get()->bool(),
-			'object' => TypeSchema::get()->object(),
-			'mixed' => TypeSchema::get()->mixed(),
-		};
+			$typeObject = match ($type) {
+				'int' => TypeSchema::get()->int(),
+				'float' => TypeSchema::get()->float(),
+				'string' => TypeSchema::get()->string(),
+				'bool' => TypeSchema::get()->bool(),
+				'object' => TypeSchema::get()->object(),
+				'mixed' => TypeSchema::get()->mixed(),
+			};
+		}
 
 		if ($nullable) {
 			$typeObject = TypeSchema::get()->nullable($typeObject);
