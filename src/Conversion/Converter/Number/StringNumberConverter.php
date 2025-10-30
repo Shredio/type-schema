@@ -8,11 +8,7 @@ final readonly class StringNumberConverter implements NumberConverter
 	public function int(mixed $value): ?int
 	{
 		if (is_string($value)) {
-			if (ctype_digit($value)) {
-				return (int) $value;
-			}
-
-			return null;
+			return NumberConverterHelper::tryConvertToStrictInt($value);
 		}
 
 		if (is_int($value)) {
@@ -25,7 +21,7 @@ final readonly class StringNumberConverter implements NumberConverter
 	public function float(mixed $value): ?float
 	{
 		if (is_string($value) && $value !== '') {
-			if (ctype_digit($value)) {
+			if (ctype_digit($value)) { // fast check for positive integers
 				return (float) $value;
 			}
 

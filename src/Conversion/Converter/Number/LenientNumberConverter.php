@@ -31,10 +31,7 @@ final readonly class LenientNumberConverter implements NumberConverter
 		}
 
 		if (is_string($value)) {
-			$filtered = filter_var($value, FILTER_VALIDATE_INT);
-			if ($filtered !== false) {
-				return $filtered;
-			}
+			return NumberConverterHelper::tryConvertToStrictInt($value);
 		}
 
 		return null;
@@ -51,13 +48,11 @@ final readonly class LenientNumberConverter implements NumberConverter
 		}
 
 		if (is_string($value) && $value !== '') {
-			if (ctype_digit($value)) {
+			if (ctype_digit($value)) { // fast check for positive integers
 				return (float) $value;
 			}
 
-			if (preg_match("/^[+-]?(?:\d+(?:[.]\d*)?(?:[eE][+-]?\d+)?|[.]\d+(?:[eE][+-]?\d+)?)$/", $value)) {
-				return (float) $value;
-			}
+			return NumberConverterHelper::tryConvertLenientFloat($value);
 		}
 
 		return null;
