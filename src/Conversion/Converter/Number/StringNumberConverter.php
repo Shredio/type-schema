@@ -25,11 +25,7 @@ final readonly class StringNumberConverter implements NumberConverter
 				return (float) $value;
 			}
 
-			if (preg_match("/^[+-]?(?:\d+(?:[.]\d*)?(?:[eE][+-]?\d+)?|[.]\d+(?:[eE][+-]?\d+)?)$/", $value)) {
-				return (float) $value;
-			}
-
-			return null;
+			return NumberConverterHelper::tryConvertLenientFloat($value);
 		}
 
 		if (is_float($value)) {
