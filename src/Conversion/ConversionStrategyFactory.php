@@ -12,6 +12,7 @@ use Shredio\TypeSchema\Conversion\Converter\Null\StrictNullConverter;
 use Shredio\TypeSchema\Conversion\Converter\Number\JsonNumberConverter;
 use Shredio\TypeSchema\Conversion\Converter\Number\LenientNumberConverter;
 use Shredio\TypeSchema\Conversion\Converter\Number\StrictNumberConverter;
+use Shredio\TypeSchema\Conversion\Converter\Number\StringNumberConverter;
 use Shredio\TypeSchema\Conversion\Converter\String\LenientStringConverter;
 use Shredio\TypeSchema\Conversion\Converter\String\StrictStringConverter;
 use Shredio\TypeSchema\Conversion\Object\LenientObjectSupervisor;
@@ -24,6 +25,8 @@ final class ConversionStrategyFactory
 	private static ?ConfigurableConversionStrategy $lenientStrategy = null;
 	private static ?ConfigurableConversionStrategy $jsonStrategy = null;
 	private static ?ConfigurableConversionStrategy $csvStrategy = null;
+
+	private static ?ConfigurableConversionStrategy $databaseStrategy = null;
 
 	public static function strict(): ConversionStrategy
 	{
@@ -68,6 +71,18 @@ final class ConversionStrategyFactory
 			new LenientNumberConverter(),
 			new StringBoolConverter(),
 			new LenientNullConverter(),
+			new LenientArrayConverter(),
+			new LenientObjectSupervisor(),
+		);
+	}
+
+	public static function database(): ConversionStrategy
+	{
+		return self::$databaseStrategy ??= new ConfigurableConversionStrategy(
+			new StrictStringConverter(),
+			new StringNumberConverter(),
+			new StringBoolConverter(['1'], ['0']),
+			new StrictNullConverter(),
 			new LenientArrayConverter(),
 			new LenientObjectSupervisor(),
 		);
