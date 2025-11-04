@@ -12,7 +12,7 @@ final readonly class DateTimeOptions
 	 * @param list<non-empty-string> $formats
 	 */
 	public function __construct(
-		public array $formats = [DateTimeInterface::ATOM, 'Y-m-d H:i:s'],
+		public array $formats = [DateTimeInterface::ATOM, 'Y-m-d H:i:s', 'Y-m-d'],
 		public bool $constructor = false,
 		public bool $allowIntAsTimestamp = false,
 		public ?DateTimeZone $timeZone = null,
