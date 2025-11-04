@@ -7,8 +7,8 @@ use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
 
 /**
- * @template-covariant T of object=object
- * @extends Type<object>
+ * @template T of object=object
+ * @extends Type<T>
  */
 final readonly class ObjectType extends Type
 {
@@ -22,7 +22,7 @@ final readonly class ObjectType extends Type
 	{
 	}
 
-	public function parse(mixed $valueToParse, TypeContext $context): mixed
+	public function parse(mixed $valueToParse, TypeContext $context): object
 	{
 		if (!is_object($valueToParse)) {
 			return $context->errorElementFactory->invalidType($this->createDefinition($context), $valueToParse);
@@ -32,7 +32,7 @@ final readonly class ObjectType extends Type
 			return $context->errorElementFactory->invalidType($this->createDefinition($context), $valueToParse);
 		}
 
-		return $valueToParse;
+		return $valueToParse; // @phpstan-ignore return.type
 	}
 
 	protected function getTypeNode(TypeContext $context): TypeNode

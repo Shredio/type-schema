@@ -78,7 +78,7 @@ class TypeSchema
 	 */
 	public function object(?string $class = null): Type
 	{
-		return new Types\ObjectType($class); // @phpstan-ignore return.type
+		return new Types\ObjectType($class);
 	}
 
 	/**
