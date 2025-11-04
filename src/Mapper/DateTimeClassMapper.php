@@ -5,26 +5,15 @@ namespace Shredio\TypeSchema\Mapper;
 use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
-use PHPStan\PhpDocParser\Ast\Type\UnionTypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
 use Shredio\TypeSchema\Helper\NumberExclusiveRange;
 use Shredio\TypeSchema\Mapper\Options\DateTimeOptions;
 
 /**
- * @template T of DateTime|DateTimeImmutable
- * @extends ClassMapper<T>
+ * @extends ClassMapper<DateTime|DateTimeImmutable>
  */
 final readonly class DateTimeClassMapper extends ClassMapper
 {
-
-	/**
-	 * @param class-string<T> $className
-	 */
-	public function __construct(
-		public string $className = DateTimeImmutable::class,
-	)
-	{
-	}
 
 	public function isSupported(string $className): bool
 	{
@@ -37,7 +26,7 @@ final readonly class DateTimeClassMapper extends ClassMapper
 
 		if (is_string($valueToParse)) {
 			foreach ($options->formats as $format) {
-				$ret = $this->className::createFromFormat($format, $valueToParse, $options->timeZone);
+				$ret = $className::createFromFormat($format, $valueToParse, $options->timeZone);
 				if ($ret !== false) {
 					return $ret;
 				}
@@ -46,7 +35,7 @@ final readonly class DateTimeClassMapper extends ClassMapper
 			if ($options->constructor) {
 				$dateTime = date_create($valueToParse);
 				if ($dateTime !== false) {
-					return $this->className::createFromInterface($dateTime);
+					return $className::createFromInterface($dateTime);
 				}
 			}
 
@@ -67,7 +56,7 @@ final readonly class DateTimeClassMapper extends ClassMapper
 			}
 
 			$dateTime = (new DateTime())->setTimestamp($valueToParse);
-			return $this->className::createFromInterface($dateTime);
+			return $className::createFromInterface($dateTime);
 		}
 
 		if ($options->allowIntAsTimestamp) {
