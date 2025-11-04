@@ -26,9 +26,10 @@ final readonly class DateTimeClassMapper extends ClassMapper
 
 		if (is_string($valueToParse)) {
 			foreach ($options->formats as $format) {
-				$ret = $className::createFromFormat($format, $valueToParse, $options->timeZone);
+				// Symfony throws MalformedDateTimeException in the createFromFormat method
+				$ret = date_create_immutable_from_format($format, $valueToParse, $options->timeZone);
 				if ($ret !== false) {
-					return $ret;
+					return $className::createFromInterface($ret);
 				}
 			}
 
