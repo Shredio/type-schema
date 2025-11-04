@@ -91,6 +91,11 @@ final readonly class DeveloperValidationMessageFactory
 		return sprintf('Item count %d is not in the expected range %s.', $count, $range->toString());
 	}
 
+	public static function invalidDate(mixed $value): string
+	{
+		return sprintf('Invalid date format, %s given.', self::describeValue($value));
+	}
+
 	public static function describeValue(mixed $value): string
 	{
 		if ($value === null || is_bool($value) || is_int($value)) {

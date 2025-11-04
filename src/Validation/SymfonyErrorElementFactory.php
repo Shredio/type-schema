@@ -166,7 +166,12 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 		return new ErrorMessage($userMessage, $developerMessage);
 	}
 
-
-
+	public function invalidDate(mixed $value): ErrorElement
+	{
+		return new ErrorMessage(
+			$this->translator->trans('This value is not a valid date.', [], $this->domain),
+			DeveloperValidationMessageFactory::invalidDate($value),
+		);
+	}
 
 }

@@ -138,4 +138,12 @@ final readonly class EnglishErrorElementFactory implements ErrorElementFactory
 		return new ErrorMessage($userMessage, $developerMessage);
 	}
 
+	public function invalidDate(mixed $value): ErrorElement
+	{
+		return new ErrorMessage(
+			'Please provide a valid date.',
+			DeveloperValidationMessageFactory::invalidDate($value),
+		);
+	}
+
 }

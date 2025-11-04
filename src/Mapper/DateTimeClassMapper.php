@@ -49,6 +49,8 @@ final readonly class DateTimeClassMapper extends ClassMapper
 					return $this->className::createFromInterface($dateTime);
 				}
 			}
+
+			return $context->errorElementFactory->invalidDate($valueToParse);
 		} else if (is_int($valueToParse)) {
 			if (!$options->allowIntAsTimestamp) {
 				return $context->errorElementFactory->invalidType($this->createNamedDefinition('string'), $valueToParse);

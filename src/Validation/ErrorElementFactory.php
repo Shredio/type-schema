@@ -43,4 +43,6 @@ interface ErrorElementFactory
 	 */
 	public function itemCountRange(TypeDefinition $definition, int $count, NumberInclusiveRange $range, RangeInclusiveDecision $decision): ErrorElement;
 
+	public function invalidDate(mixed $value): ErrorElement;
+
 }
