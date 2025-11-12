@@ -24,6 +24,42 @@ final readonly class TypeContext
 	{
 	}
 
+	public function withConversionStrategy(ConversionStrategy $conversionStrategy): TypeContext
+	{
+		return new self(
+			$conversionStrategy,
+			$this->errorElementFactory,
+			$this->classMapperProvider,
+			$this->hierarchyConfig,
+			$this->options,
+			$this->collectErrors,
+		);
+	}
+
+	public function withErrorElementFactory(ErrorElementFactory $errorElementFactory): TypeContext
+	{
+		return new self(
+			$this->conversionStrategy,
+			$errorElementFactory,
+			$this->classMapperProvider,
+			$this->hierarchyConfig,
+			$this->options,
+			$this->collectErrors,
+		);
+	}
+
+	public function withClassMapperProvider(ClassMapperProvider $classMapperProvider): TypeContext
+	{
+		return new self(
+			$this->conversionStrategy,
+			$this->errorElementFactory,
+			$classMapperProvider,
+			$this->hierarchyConfig,
+			$this->options,
+			$this->collectErrors,
+		);
+	}
+
 	/**
 	 * @template TOption of object
 	 * @param class-string<TOption> $className
