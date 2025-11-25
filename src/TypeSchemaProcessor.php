@@ -95,7 +95,7 @@ final readonly class TypeSchemaProcessor
 				$this->errorElementFactory,
 				$config->classMapperProvider ?? $this->classMapperProvider,
 				$config->hierarchyConfig,
-				[],
+				$config->options,
 				$collectErrors,
 			);
 		}
