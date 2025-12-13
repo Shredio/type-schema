@@ -7,8 +7,13 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         version: ['8.3','8.4']
+        include:
+          - version: '8.5'
+            experimental: true
+    continue-on-error: ${{ matrix.experimental || false }}
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
