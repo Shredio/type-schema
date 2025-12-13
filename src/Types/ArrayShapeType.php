@@ -128,6 +128,14 @@ final readonly class ArrayShapeType extends Type
 		return $return;
 	}
 
+	/**
+	 * @return list<TKey>
+	 */
+	public function getElementKeys(): array
+	{
+		return [...array_keys($this->required), ...array_keys($this->optional)];
+	}
+
 	protected function getTypeNode(TypeContext $context): TypeNode
 	{
 		$items = [];
