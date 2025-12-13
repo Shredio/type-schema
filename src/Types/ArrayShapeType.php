@@ -9,6 +9,7 @@ use PHPStan\PhpDocParser\Ast\Type\ArrayShapeNode;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
+use Shredio\TypeSchema\Enum\ExtraKeysBehavior;
 use Shredio\TypeSchema\Error\ErrorElement;
 use Shredio\TypeSchema\Error\IdentifiedPath;
 
@@ -33,7 +34,7 @@ final readonly class ArrayShapeType extends Type
 	 */
 	public function __construct(
 		array $elements,
-		private bool $allowExtraKeys = false,
+		private ExtraKeysBehavior $extraKeys = ExtraKeysBehavior::Reject,
 		private ?string $identifier = null,
 	)
 	{
@@ -91,7 +92,7 @@ final readonly class ArrayShapeType extends Type
 
 		foreach ($value as $key => $val) {
 			if (!isset($this->optional[$key])) {
-				if (!$this->allowExtraKeys) {
+				if ($this->extraKeys === ExtraKeysBehavior::Reject) {
 					$error = $this->createChildError(
 						$context->errorElementFactory->extraField($this->createDefinition($context)),
 						$key,
@@ -105,9 +106,10 @@ final readonly class ArrayShapeType extends Type
 					}
 
 					continue;
+				} else if ($this->extraKeys === ExtraKeysBehavior::Accept) {
+					$return[$key] = $val;
 				}
 
-				$return[$key] = $val;
 				continue;
 			}
 
@@ -128,14 +130,6 @@ final readonly class ArrayShapeType extends Type
 		return $return;
 	}
 
-	/**
-	 * @return list<TKey>
-	 */
-	public function getElementKeys(): array
-	{
-		return [...array_keys($this->required), ...array_keys($this->optional)];
-	}
-
 	protected function getTypeNode(TypeContext $context): TypeNode
 	{
 		$items = [];
@@ -146,7 +140,7 @@ final readonly class ArrayShapeType extends Type
 			$items[] = new ArrayShapeItemNode($this->createTypeForKey($key), true, $type->getTypeNode($context));
 		}
 
-		return ArrayShapeNode::createSealed($items, ArrayShapeNode::KIND_ARRAY); // TODO: unsealed if allowExtraKeys
+		return ArrayShapeNode::createSealed($items, ArrayShapeNode::KIND_ARRAY); // TODO: unsealed if extraKeys allowed
 	}
 
 	private function createTypeForKey(string|int $key): ConstExprIntegerNode|IdentifierTypeNode|ConstExprStringNode

@@ -3,6 +3,7 @@
 namespace Shredio\TypeSchema;
 
 use Shredio\TypeSchema\Context\TypeContext;
+use Shredio\TypeSchema\Enum\ExtraKeysBehavior;
 use Shredio\TypeSchema\Error\ErrorElement;
 use Shredio\TypeSchema\Types\Type;
 use Shredio\TypeSchema\Types\UnionType;
@@ -102,9 +103,17 @@ class TypeSchema
 	 * @param non-empty-string|null $identifier
 	 * @return Type<array<TKey, TValue>>
 	 */
-	public function arrayShape(array $schema, bool $allowExtraItems = false, ?string $identifier = null): Type
+	public function arrayShape(
+		array $schema,
+		bool|ExtraKeysBehavior $extraItems = false, // boolean is deprecated
+		?string $identifier = null,
+	): Type
 	{
-		return new Types\ArrayShapeType($schema, $allowExtraItems, $identifier);
+		if (is_bool($extraItems)) {
+			$extraItems = $extraItems ? ExtraKeysBehavior::Accept : ExtraKeysBehavior::Reject;
+		}
+
+		return new Types\ArrayShapeType($schema, $extraItems, $identifier);
 	}
 
 	/**
