@@ -141,7 +141,6 @@ final class ArrayShapeTypeTest extends TypeTestCase
 			'name' => new StringType(),
 		], ExtraKeysBehavior::Ignore);
 
-
 		$processor = $this->getProcessor();
 
 		$value = ['name' => 'John', 'extra' => 'should be ignored'];
@@ -166,6 +165,22 @@ final class ArrayShapeTypeTest extends TypeTestCase
 		$this->assertIsArray($ret);
 		$this->assertArrayHasKey('name', $ret);
 		$this->assertArrayHasKey('extra', $ret);
+	}
+
+	public function testWithExtraKeysBehavior(): void
+	{
+		$type = new ArrayShapeType([
+			'name' => new StringType(),
+		], ExtraKeysBehavior::Accept);
+
+		$processor = $this->getProcessor();
+
+		$value = ['name' => 'John', 'extra' => 'should be ignored'];
+		$ret = $processor->parse($value, $type->withExtraKeysBehavior(ExtraKeysBehavior::Ignore));
+
+		$this->assertIsArray($ret);
+		$this->assertArrayHasKey('name', $ret);
+		$this->assertArrayNotHasKey('extra', $ret);
 	}
 
 }

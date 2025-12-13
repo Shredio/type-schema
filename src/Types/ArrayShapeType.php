@@ -52,6 +52,25 @@ final readonly class ArrayShapeType extends Type
 		$this->optional = $optional;
 	}
 
+	/**
+	 * @return self<TKey, TValue>
+	 */
+	public function withExtraKeysBehavior(ExtraKeysBehavior $behavior): self
+	{
+		if (PHP_VERSION_ID >= 80500) {
+			// remove call_user_func on PHP 8.5+
+			return call_user_func('clone', $this, [ // @phpstan-ignore-line
+				'extraKeys' => $behavior,
+			]);
+		}
+
+		return new self(
+			[...$this->required, ...$this->optional],
+			$behavior,
+			$this->identifier,
+		);
+	}
+
 	public function parse(mixed $valueToParse, TypeContext $context): mixed
 	{
 		$value = $context->conversionStrategy->array($valueToParse, true);
