@@ -9,6 +9,6 @@ interface ErrorElement
 	 * @param list<Path> $path
 	 * @return non-empty-list<ErrorReport>
 	 */
-	public function getReports(array $path = []): array;
+	public function getReports(array $path = [], ?ErrorReportConfig $config = null): array;
 
 }

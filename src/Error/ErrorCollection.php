@@ -14,10 +14,10 @@ final readonly class ErrorCollection implements ErrorElement
 	{
 	}
 
-	public function getReports(array $path = []): array
+	public function getReports(array $path = [], ?ErrorReportConfig $config = null): array
 	{
 		return array_merge(...array_map(
-			fn (ErrorElement $element): array => $element->getReports($path),
+			static fn (ErrorElement $element): array => $element->getReports($path, $config),
 			$this->collection,
 		));
 	}

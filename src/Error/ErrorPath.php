@@ -20,7 +20,7 @@ final readonly class ErrorPath implements ErrorElement
 		);
 	}
 
-	public function getReports(array $path = []): array
+	public function getReports(array $path = [], ?ErrorReportConfig $config = null): array
 	{
 		$path[] = $this->path;
 		return $this->error->getReports($path);

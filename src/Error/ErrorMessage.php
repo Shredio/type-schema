@@ -14,7 +14,7 @@ final readonly class ErrorMessage implements ErrorElement
 	{
 	}
 
-	public function getReports(array $path = []): array
+	public function getReports(array $path = [], ?ErrorReportConfig $config = null): array
 	{
 		return [new ErrorReport($this->message, $this->messageForDeveloper, $path)];
 	}

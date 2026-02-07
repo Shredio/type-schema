@@ -29,10 +29,16 @@ final readonly class ErrorInvalidType implements ErrorElement
 		return new self($definition, $this->message, $this->originalValue, $this->typeSeparator);
 	}
 
-	public function getReports(array $path = []): array
+	public function getReports(array $path = [], ?ErrorReportConfig $config = null): array
 	{
+		$expectedType = null;
+		$exposeExpectedType = $config->exposeExpectedType ?? true;
+		if ($exposeExpectedType) {
+			$expectedType = $this->definition->getUserSafeType($this->typeSeparator);
+		}
+
 		return [new ErrorReport(
-			($this->message)($this->definition->getUserSafeType($this->typeSeparator)),
+			($this->message)($expectedType),
 			DeveloperValidationMessageFactory::invalidType($this->definition, $this->originalValue),
 			$path,
 		)];
