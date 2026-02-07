@@ -2,10 +2,14 @@
 
 namespace Tests\Unit\Error;
 
+use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shredio\TypeSchema\Context\TypeDefinition;
+use Shredio\TypeSchema\Error\ErrorInvalidType;
 use Shredio\TypeSchema\Error\ErrorMessage;
 use Shredio\TypeSchema\Error\ErrorPath;
+use Shredio\TypeSchema\Error\ErrorReportConfig;
 use Shredio\TypeSchema\Error\Path;
 
 #[CoversClass(ErrorPath::class)]
@@ -49,6 +53,22 @@ final class ErrorPathTest extends TestCase
 		$this->assertCount(2, $reports[0]->path);
 		$this->assertSame('level1', $reports[0]->path[0]->path);
 		$this->assertSame('level2', $reports[0]->path[1]->path);
+	}
+
+	public function testGetReportsPassesConfigToChild(): void
+	{
+		$definition = new TypeDefinition(new IdentifierTypeNode('string'));
+		$innerError = new ErrorInvalidType(
+			$definition,
+			fn (?string $type): string => sprintf('Expected %s.', $type ?? 'nothing'),
+			42,
+		);
+		$errorPath = new ErrorPath($innerError, new Path('field'));
+
+		$config = new ErrorReportConfig(exposeExpectedType: false);
+		$reports = $errorPath->getReports([], $config);
+
+		$this->assertSame('Expected nothing.', (string) $reports[0]->message);
 	}
 
 	public function testWithPathReturnsNewInstance(): void
