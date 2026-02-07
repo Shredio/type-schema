@@ -4,6 +4,7 @@ namespace Shredio\TypeSchema\Validation;
 
 use InvalidArgumentException;
 use Shredio\TypeSchema\Context\TypeDefinition;
+use Shredio\TypeSchema\Error\ErrorCollection;
 use Shredio\TypeSchema\Error\ErrorElement;
 use Shredio\TypeSchema\Error\ErrorInvalidType;
 use Shredio\TypeSchema\Error\ErrorMessage;
@@ -11,10 +12,13 @@ use Shredio\TypeSchema\Helper\NumberInclusiveRange;
 use Shredio\TypeSchema\Helper\NumberRange;
 use Shredio\TypeSchema\Helper\RangeExclusiveDecision;
 use Shredio\TypeSchema\Helper\RangeInclusiveDecision;
+use Stringable;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 {
+
+	use CommonErrorElements;
 
 	public function __construct(
 		private TranslatorInterface $translator,

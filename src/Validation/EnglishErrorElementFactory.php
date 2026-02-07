@@ -15,6 +15,8 @@ use Shredio\TypeSchema\Helper\RangeInclusiveDecision;
 final readonly class EnglishErrorElementFactory implements ErrorElementFactory
 {
 
+	use CommonErrorElements;
+
 	public function invalidType(TypeDefinition $definition, mixed $value): ErrorInvalidType
 	{
 		return new ErrorInvalidType($definition, function (?string $userType): string {

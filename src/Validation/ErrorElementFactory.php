@@ -10,6 +10,7 @@ use Shredio\TypeSchema\Helper\NumberInclusiveRange;
 use Shredio\TypeSchema\Helper\NumberRange;
 use Shredio\TypeSchema\Helper\RangeExclusiveDecision;
 use Shredio\TypeSchema\Helper\RangeInclusiveDecision;
+use Stringable;
 
 interface ErrorElementFactory
 {
@@ -44,5 +45,12 @@ interface ErrorElementFactory
 	public function itemCountRange(TypeDefinition $definition, int $count, NumberInclusiveRange $range, RangeInclusiveDecision $decision): ErrorElement;
 
 	public function invalidDate(mixed $value): ErrorElement;
+
+	public function createError(string|Stringable $message, string|Stringable|null $messageForDeveloper = null): ErrorElement;
+
+	/**
+	 * @param non-empty-list<ErrorElement> $elements
+	 */
+	public function createCollection(array $elements): ErrorElement;
 
 }
