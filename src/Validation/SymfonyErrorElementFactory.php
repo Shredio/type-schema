@@ -88,7 +88,7 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 	public function notEmpty(TypeDefinition $definition, mixed $value): ErrorMessage
 	{
 		return new ErrorMessage(
-			$this->translator->trans('This value should be blank.', [], $this->domain),
+			$this->translator->trans('This value should not be blank.', [], $this->domain),
 			DeveloperValidationMessageFactory::notEmpty($definition, $value),
 		);
 	}
