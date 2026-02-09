@@ -34,7 +34,7 @@ final readonly class ArrayShapeType extends Type
 	 */
 	public function __construct(
 		array $elements,
-		private ExtraKeysBehavior $extraKeys = ExtraKeysBehavior::Reject,
+		private ?ExtraKeysBehavior $extraKeys = null,
 		private ?string $identifier = null,
 	)
 	{
@@ -55,7 +55,7 @@ final readonly class ArrayShapeType extends Type
 	/**
 	 * @return self<TKey, TValue>
 	 */
-	public function withExtraKeysBehavior(ExtraKeysBehavior $behavior): self
+	public function withExtraKeysBehavior(?ExtraKeysBehavior $behavior): self
 	{
 		if (PHP_VERSION_ID >= 80500) {
 			// remove call_user_func on PHP 8.5+
@@ -109,9 +109,10 @@ final readonly class ArrayShapeType extends Type
 			}
 		}
 
+		$extraKeysBehavior = $this->extraKeys ?? $context->defaultExtraKeysBehavior ?? ExtraKeysBehavior::Reject;
 		foreach ($value as $key => $val) {
 			if (!isset($this->optional[$key])) {
-				if ($this->extraKeys === ExtraKeysBehavior::Reject) {
+				if ($extraKeysBehavior === ExtraKeysBehavior::Reject) {
 					$error = $this->createChildError(
 						$context->errorElementFactory->extraField($this->createDefinition($context)),
 						$key,
@@ -125,7 +126,7 @@ final readonly class ArrayShapeType extends Type
 					}
 
 					continue;
-				} else if ($this->extraKeys === ExtraKeysBehavior::Accept) {
+				} else if ($extraKeysBehavior === ExtraKeysBehavior::Accept) {
 					$return[$key] = $val;
 				}
 

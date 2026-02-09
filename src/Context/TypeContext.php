@@ -4,6 +4,7 @@ namespace Shredio\TypeSchema\Context;
 
 use Shredio\TypeSchema\Config\TypeHierarchyConfig;
 use Shredio\TypeSchema\Conversion\ConversionStrategy;
+use Shredio\TypeSchema\Enum\ExtraKeysBehavior;
 use Shredio\TypeSchema\Mapper\ClassMapperProvider;
 use Shredio\TypeSchema\Validation\ErrorElementFactory;
 
@@ -20,6 +21,7 @@ final readonly class TypeContext
 		public ?TypeHierarchyConfig $hierarchyConfig = null,
 		private array $options = [],
 		public bool $collectErrors = false,
+		public ?ExtraKeysBehavior $defaultExtraKeysBehavior = null,
 	)
 	{
 	}
@@ -33,6 +35,7 @@ final readonly class TypeContext
 			$this->hierarchyConfig,
 			$this->options,
 			$this->collectErrors,
+			$this->defaultExtraKeysBehavior,
 		);
 	}
 
@@ -45,6 +48,7 @@ final readonly class TypeContext
 			$this->hierarchyConfig,
 			$this->options,
 			$this->collectErrors,
+			$this->defaultExtraKeysBehavior,
 		);
 	}
 
@@ -57,6 +61,20 @@ final readonly class TypeContext
 			$this->hierarchyConfig,
 			$this->options,
 			$this->collectErrors,
+			$this->defaultExtraKeysBehavior,
+		);
+	}
+
+	public function withDefaultExtraKeysBehavior(?ExtraKeysBehavior $behavior): TypeContext
+	{
+		return new self(
+			$this->conversionStrategy,
+			$this->errorElementFactory,
+			$this->classMapperProvider,
+			$this->hierarchyConfig,
+			$this->options,
+			$this->collectErrors,
+			$behavior,
 		);
 	}
 
@@ -90,6 +108,7 @@ final readonly class TypeContext
 					$childConfig,
 					$this->options,
 					$this->collectErrors,
+					$this->defaultExtraKeysBehavior,
 				);
 			} else {
 				$contexts[$key] = new self(
@@ -99,6 +118,7 @@ final readonly class TypeContext
 					null,
 					$childConfig->options,
 					$this->collectErrors,
+					$this->defaultExtraKeysBehavior,
 				);
 			}
 		}

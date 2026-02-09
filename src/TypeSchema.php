@@ -105,12 +105,14 @@ class TypeSchema
 	 */
 	public function arrayShape(
 		array $schema,
-		bool|ExtraKeysBehavior $extraItems = false, // boolean is deprecated
+		bool|ExtraKeysBehavior|null $extraItems = false, // boolean is deprecated
 		?string $identifier = null,
 	): Type
 	{
-		if (is_bool($extraItems)) {
-			$extraItems = $extraItems ? ExtraKeysBehavior::Accept : ExtraKeysBehavior::Reject;
+		if ($extraItems === true) {
+			$extraItems = ExtraKeysBehavior::Accept;
+		} elseif ($extraItems === false) {
+			$extraItems = null;
 		}
 
 		return new Types\ArrayShapeType($schema, $extraItems, $identifier);
