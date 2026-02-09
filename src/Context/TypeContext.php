@@ -118,7 +118,7 @@ final readonly class TypeContext
 					null,
 					$childConfig->options,
 					$this->collectErrors,
-					$this->defaultExtraKeysBehavior,
+					$childConfig->defaultExtraKeysBehavior ?? $this->defaultExtraKeysBehavior,
 				);
 			}
 		}

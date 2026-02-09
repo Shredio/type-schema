@@ -97,6 +97,7 @@ final readonly class TypeSchemaProcessor
 				$config->hierarchyConfig,
 				$config->options,
 				$collectErrors,
+				$config->defaultExtraKeysBehavior,
 			);
 		}
 
