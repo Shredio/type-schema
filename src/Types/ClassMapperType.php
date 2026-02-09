@@ -10,8 +10,9 @@ use Shredio\TypeSchema\Mapper\ClassMapper;
 /**
  * @template T of object
  * @extends Type<T>
+ * @implements ClassBoundType<T>
  */
-final readonly class ClassMapperType extends Type
+final readonly class ClassMapperType extends Type implements ClassBoundType
 {
 
 	/**
@@ -23,6 +24,11 @@ final readonly class ClassMapperType extends Type
 		private ClassMapper $mapper,
 	)
 	{
+	}
+
+	public function getClassName(): string
+	{
+		return $this->className;
 	}
 
 	public function parse(mixed $valueToParse, TypeContext $context): mixed

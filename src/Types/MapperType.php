@@ -9,8 +9,9 @@ use Shredio\TypeSchema\Exception\ClassMapperNotFoundException;
 /**
  * @template T of object
  * @extends Type<T>
+ * @implements ClassBoundType<T>
  */
-final readonly class MapperType extends Type
+final readonly class MapperType extends Type implements ClassBoundType
 {
 
 	/**
@@ -20,6 +21,11 @@ final readonly class MapperType extends Type
 		private string $className,
 	)
 	{
+	}
+
+	public function getClassName(): string
+	{
+		return $this->className;
 	}
 
 	public function parse(mixed $valueToParse, TypeContext $context): mixed
