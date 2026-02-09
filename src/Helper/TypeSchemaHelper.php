@@ -27,6 +27,11 @@ final readonly class TypeSchemaHelper
 		'string' => true,
 	];
 
+	public static function mergeErrors(ErrorElement $firstElement, ErrorElement $secondElement): ErrorCollection
+	{
+		return new ErrorCollection([$firstElement, $secondElement]);
+	}
+
 	/**
 	 * @return Type<mixed>
 	 *
