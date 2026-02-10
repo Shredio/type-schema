@@ -11,6 +11,7 @@ use Shredio\TypeSchema\Mapper\ClassMapper;
  * @template T of object
  * @extends Type<T>
  * @implements ClassBoundType<T>
+ * @internal
  */
 final readonly class ClassMapperType extends Type implements ClassBoundType
 {
