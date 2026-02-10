@@ -15,12 +15,12 @@ use Shredio\TypeSchema\TypeSystem\TypeNodeHelper;
 final readonly class AfterType extends Type
 {
 
-	/** @var callable(T): U */
+	/** @var callable(T $value, TypeContext $context): U */
 	private mixed $callback;
 
 	/**
 	 * @param Type<T> $type
-	 * @param callable(T): U $callback
+	 * @param callable(T $value, TypeContext $context): U $callback
 	 */
 	public function __construct(
 		private Type $type,
@@ -37,7 +37,7 @@ final readonly class AfterType extends Type
 			return $val;
 		}
 
-		return ($this->callback)($val);
+		return ($this->callback)($val, $context);
 	}
 
 	protected function getTypeNode(TypeContext $context): TypeNode
