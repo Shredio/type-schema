@@ -41,6 +41,15 @@ abstract readonly class Type
 	}
 
 	/**
+	 * @param callable(T $value, TypeContext $context): ?ErrorElement $callback
+	 * @return Type<T>
+	 */
+	final public function validate(callable $callback): Type
+	{
+		return new ValidateType($this, $callback);
+	}
+
+	/**
 	 * @phpstan-assert-if-true ErrorElement $value
 	 */
 	protected function isError(mixed $value): bool
