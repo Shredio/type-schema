@@ -15,6 +15,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ServicesConfigurator;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
 
@@ -45,10 +46,16 @@ final class TypeSchemaBundle extends AbstractBundle
 		$this->registerClassMapper($services, 'backed_enum', BackedEnumClassMapper::class);
 		$this->registerClassMapper($services, 'datetime', DateTimeClassMapper::class);
 
+		$services->set($this->prefix('default_option.symfony_validator'), SymfonySchemaValidator::class)
+			->arg('$validator', service(ValidatorInterface::class));
+
 		$services->set($this->prefix('processor'), TypeSchemaProcessor::class)
 			->arg('$conversionStrategy', service($this->prefix('conversion_strategy')))
 			->arg('$errorElementFactory', service($this->prefix('error_element_factory')))
 			->arg('$classMapperProvider', service(self::ClassMapperProviderServiceName))
+			->arg('$defaultOptions', [
+				SymfonySchemaValidator::class => service($this->prefix('default_option.symfony_validator')),
+			])
 			->alias(TypeSchemaProcessor::class, $this->prefix('processor'));
 
 		$builder->registerForAutoconfiguration(ClassMapper::class)

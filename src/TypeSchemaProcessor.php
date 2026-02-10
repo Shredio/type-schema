@@ -17,24 +17,33 @@ use Shredio\TypeSchema\Validation\ErrorElementFactory;
 final readonly class TypeSchemaProcessor
 {
 
+	/**
+	 * @param array<class-string, object> $defaultOptions
+	 */
 	public function __construct(
 		private ConversionStrategy $conversionStrategy,
 		private ErrorElementFactory $errorElementFactory,
 		private ClassMapperProvider $classMapperProvider,
+		private array $defaultOptions = [],
 	)
 	{
 	}
 
+	/**
+	 * @param array<class-string, object> $defaultOptions
+	 */
 	public static function createDefault(
 		?ConversionStrategy $conversionStrategy = null,
 		?ErrorElementFactory $errorElementFactory = null,
 		?ClassMapperProvider $classMapperProvider = null,
+		array $defaultOptions = [],
 	): self
 	{
 		return new self(
 			$conversionStrategy ?? ConversionStrategyFactory::strict(),
 			$errorElementFactory ?? new EnglishErrorElementFactory(),
 			$classMapperProvider ?? new RegistryClassMapperProvider(RegistryClassMapperProvider::createDefaultClassMappers()),
+			$defaultOptions,
 		);
 	}
 
@@ -86,7 +95,7 @@ final readonly class TypeSchemaProcessor
 				$this->errorElementFactory,
 				$this->classMapperProvider,
 				null,
-				[],
+				$this->defaultOptions,
 				$collectErrors,
 			);
 		} else {
@@ -95,7 +104,7 @@ final readonly class TypeSchemaProcessor
 				$this->errorElementFactory,
 				$config->classMapperProvider ?? $this->classMapperProvider,
 				$config->hierarchyConfig,
-				$config->options,
+				array_merge($this->defaultOptions, $config->options),
 				$collectErrors,
 				$config->defaultExtraKeysBehavior,
 			);
