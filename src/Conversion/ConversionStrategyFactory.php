@@ -2,6 +2,7 @@
 
 namespace Shredio\TypeSchema\Conversion;
 
+use Shredio\TypeSchema\Conversion\Converter\Array\WrappingArrayConverter;
 use Shredio\TypeSchema\Conversion\Converter\Array\LenientArrayConverter;
 use Shredio\TypeSchema\Conversion\Converter\Array\StrictArrayConverter;
 use Shredio\TypeSchema\Conversion\Converter\Bool\LenientBoolConverter;
@@ -25,6 +26,8 @@ final class ConversionStrategyFactory
 	private static ?ConfigurableConversionStrategy $lenientStrategy = null;
 	private static ?ConfigurableConversionStrategy $jsonStrategy = null;
 	private static ?ConfigurableConversionStrategy $csvStrategy = null;
+
+	private static ?ConfigurableConversionStrategy $httpStrategy = null;
 
 	private static ?ConfigurableConversionStrategy $databaseStrategy = null;
 
@@ -90,7 +93,14 @@ final class ConversionStrategyFactory
 
 	public static function httpGet(): ConversionStrategy
 	{
-		return self::csv();
+		return self::$httpStrategy ??= new ConfigurableConversionStrategy(
+			new StrictStringConverter(),
+			new LenientNumberConverter(),
+			new StringBoolConverter(),
+			new LenientNullConverter(),
+			new WrappingArrayConverter(),
+			new LenientObjectSupervisor(),
+		);
 	}
 
 }
