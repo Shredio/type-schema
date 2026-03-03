@@ -28,7 +28,7 @@ final readonly class LenientNumberConverter implements NumberConverter, Construc
 			return $value;
 		}
 
-		if (is_float($value) && $this->floatToIntEpsilon !== null) {
+		if (is_float($value) && is_finite($value) && $this->floatToIntEpsilon !== null) {
 			$int = (int) round($value, mode: $this->roundingMode);
 
 			if (abs($value - $int) <= $this->floatToIntEpsilon) {

@@ -411,6 +411,24 @@ final class LenientNumberConverterTest extends TestCase
 		$this->assertSame(-1, $converter->int(-1.5));
 	}
 
+	public function testIntReturnsNullForInfAndNan(): void
+	{
+		$converter = new LenientNumberConverter(floatToIntEpsilon: LenientNumberConverter::AlwaysFloatToInt);
+
+		$this->assertNull($converter->int(INF));
+		$this->assertNull($converter->int(-INF));
+		$this->assertNull($converter->int(NAN));
+	}
+
+	public function testIntReturnsNullForInfAndNanWithDisabledEpsilon(): void
+	{
+		$converter = new LenientNumberConverter(floatToIntEpsilon: null);
+
+		$this->assertNull($converter->int(INF));
+		$this->assertNull($converter->int(-INF));
+		$this->assertNull($converter->int(NAN));
+	}
+
 	public function testIntRoundingModeDoesNotAffectExactValues(): void
 	{
 		$converter = new LenientNumberConverter(

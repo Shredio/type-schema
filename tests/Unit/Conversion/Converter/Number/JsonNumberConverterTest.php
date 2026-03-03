@@ -323,6 +323,24 @@ final class JsonNumberConverterTest extends TestCase
 		$this->assertSame(-1, $converter->int(-1.5));
 	}
 
+	public function testIntReturnsNullForInfAndNan(): void
+	{
+		$converter = new JsonNumberConverter(floatToIntEpsilon: JsonNumberConverter::AlwaysFloatToInt);
+
+		$this->assertNull($converter->int(INF));
+		$this->assertNull($converter->int(-INF));
+		$this->assertNull($converter->int(NAN));
+	}
+
+	public function testIntReturnsNullForInfAndNanWithDisabledEpsilon(): void
+	{
+		$converter = new JsonNumberConverter(floatToIntEpsilon: null);
+
+		$this->assertNull($converter->int(INF));
+		$this->assertNull($converter->int(-INF));
+		$this->assertNull($converter->int(NAN));
+	}
+
 	public function testIntRoundingModeDoesNotAffectExactValues(): void
 	{
 		$converter = new JsonNumberConverter(
