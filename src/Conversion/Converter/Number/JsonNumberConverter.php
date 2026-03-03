@@ -52,7 +52,16 @@ final readonly class JsonNumberConverter implements NumberConverter, Constructab
 
 	public function constructorArguments(): array
 	{
-		return [$this->floatToIntEpsilon, $this->roundingMode];
+		if ($this->floatToIntEpsilon === self::DisableFloatToInt && $this->roundingMode === PHP_ROUND_HALF_UP) {
+			return [];
+		}
+
+		$arguments = [$this->floatToIntEpsilon];
+		if ($this->roundingMode !== PHP_ROUND_HALF_UP) {
+			$arguments[] = $this->roundingMode;
+		}
+
+		return $arguments;
 	}
 
 }

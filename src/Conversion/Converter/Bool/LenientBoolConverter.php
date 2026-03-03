@@ -50,7 +50,16 @@ final readonly class LenientBoolConverter implements BoolConverter, Constructabl
 
 	public function constructorArguments(): array
 	{
-		return [$this->trueValues, $this->falseValues];
+		if ($this->trueValues === ['1', 1, 'true'] && $this->falseValues === ['0', 0, 'false']) {
+			return [];
+		}
+
+		$arguments = [$this->trueValues];
+		if ($this->falseValues !== ['0', 0, 'false']) {
+			$arguments[] = $this->falseValues;
+		}
+
+		return $arguments;
 	}
 
 }

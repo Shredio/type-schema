@@ -40,7 +40,16 @@ final readonly class StringBoolConverter implements BoolConverter, Constructable
 
 	public function constructorArguments(): array
 	{
-		return [$this->trueValues, $this->falseValues];
+		if ($this->trueValues === ['1', 'true'] && $this->falseValues === ['0', 'false']) {
+			return [];
+		}
+
+		$arguments = [$this->trueValues];
+		if ($this->falseValues !== ['0', 'false']) {
+			$arguments[] = $this->falseValues;
+		}
+
+		return $arguments;
 	}
 
 }

@@ -68,7 +68,16 @@ final readonly class LenientNumberConverter implements NumberConverter, Construc
 
 	public function constructorArguments(): array
 	{
-		return [$this->floatToIntEpsilon, $this->roundingMode];
+		if ($this->floatToIntEpsilon === self::ExactFloatToInt && $this->roundingMode === PHP_ROUND_HALF_UP) {
+			return [];
+		}
+
+		$arguments = [$this->floatToIntEpsilon];
+		if ($this->roundingMode !== PHP_ROUND_HALF_UP) {
+			$arguments[] = $this->roundingMode;
+		}
+
+		return $arguments;
 	}
 
 }
