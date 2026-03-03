@@ -5,6 +5,13 @@ namespace Shredio\TypeSchema\Types;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
 use Shredio\TypeSchema\Context\TypeDefinition;
+use Shredio\TypeSchema\Conversion\ConfigurableConversionStrategy;
+use Shredio\TypeSchema\Conversion\ConversionStrategyDelegator;
+use Shredio\TypeSchema\Conversion\Converter\Array\ArrayConverter;
+use Shredio\TypeSchema\Conversion\Converter\Bool\BoolConverter;
+use Shredio\TypeSchema\Conversion\Converter\Null\NullConverter;
+use Shredio\TypeSchema\Conversion\Converter\Number\NumberConverter;
+use Shredio\TypeSchema\Conversion\Converter\String\StringConverter;
 use Shredio\TypeSchema\Error\ErrorCollection;
 use Shredio\TypeSchema\Error\ErrorElement;
 use Shredio\TypeSchema\Error\ErrorPath;
@@ -38,6 +45,31 @@ abstract readonly class Type
 	final public function after(callable $callback): Type
 	{
 		return new AfterType($this, $callback);
+	}
+
+	/**
+	 * @return Type<T>
+	 */
+	final public function conversion(
+		?StringConverter $string = null,
+		?NumberConverter $int = null,
+		?NumberConverter $float = null,
+		?BoolConverter $bool = null,
+		?NullConverter $null = null,
+		?ArrayConverter $array = null,
+	): Type
+	{
+		return new ContextType($this, static fn (TypeContext $context): TypeContext => $context->withConversionStrategy(
+			new ConversionStrategyDelegator(
+				string: $string === null ? $context->conversionStrategy : ConfigurableConversionStrategy::forString($string),
+				int: $int === null ? $context->conversionStrategy : ConfigurableConversionStrategy::forNumber($int),
+				float: $float === null ? $context->conversionStrategy : ConfigurableConversionStrategy::forNumber($float),
+				bool: $bool === null ? $context->conversionStrategy : ConfigurableConversionStrategy::forBool($bool),
+				null: $null === null ? $context->conversionStrategy : ConfigurableConversionStrategy::forNull($null),
+				array: $array === null ? $context->conversionStrategy : ConfigurableConversionStrategy::forArray($array),
+				object: $context->conversionStrategy,
+			)),
+		);
 	}
 
 	/**

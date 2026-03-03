@@ -3,10 +3,16 @@
 namespace Shredio\TypeSchema\Conversion;
 
 use Shredio\TypeSchema\Conversion\Converter\Array\ArrayConverter;
+use Shredio\TypeSchema\Conversion\Converter\Array\NeverArrayConverter;
 use Shredio\TypeSchema\Conversion\Converter\Bool\BoolConverter;
+use Shredio\TypeSchema\Conversion\Converter\Bool\NeverBoolConverter;
+use Shredio\TypeSchema\Conversion\Converter\Null\NeverNullConverter;
 use Shredio\TypeSchema\Conversion\Converter\Null\NullConverter;
+use Shredio\TypeSchema\Conversion\Converter\Number\NeverNumberConverter;
 use Shredio\TypeSchema\Conversion\Converter\Number\NumberConverter;
+use Shredio\TypeSchema\Conversion\Converter\String\NeverStringConverter;
 use Shredio\TypeSchema\Conversion\Converter\String\StringConverter;
+use Shredio\TypeSchema\Conversion\Object\NeverObjectSupervisor;
 use Shredio\TypeSchema\Conversion\Object\ObjectSupervisor;
 
 final readonly class ConfigurableConversionStrategy implements ConversionStrategy
@@ -59,6 +65,108 @@ final readonly class ConfigurableConversionStrategy implements ConversionStrateg
 	public function isStrictForObject(string $className): bool
 	{
 		return $this->objectSupervisor->isStrict($className);
+	}
+
+	/**
+	 * @param non-empty-string|null $reason
+	 */
+	public static function forString(StringConverter $converter, ?string $reason = null): self
+	{
+		$reason ??= 'string-only strategy';
+
+		return new self(
+			stringConverter: $converter,
+			numberConverter: new NeverNumberConverter($reason),
+			boolConverter: new NeverBoolConverter($reason),
+			nullConverter: new NeverNullConverter($reason),
+			arrayConverter: new NeverArrayConverter($reason),
+			objectSupervisor: new NeverObjectSupervisor($reason),
+		);
+	}
+
+	/**
+	 * @param non-empty-string|null $reason
+	 */
+	public static function forNumber(NumberConverter $converter, ?string $reason = null): self
+	{
+		$reason ??= 'number-only strategy';
+
+		return new self(
+			stringConverter: new NeverStringConverter($reason),
+			numberConverter: $converter,
+			boolConverter: new NeverBoolConverter($reason),
+			nullConverter: new NeverNullConverter($reason),
+			arrayConverter: new NeverArrayConverter($reason),
+			objectSupervisor: new NeverObjectSupervisor($reason),
+		);
+	}
+
+	/**
+	 * @param non-empty-string|null $reason
+	 */
+	public static function forBool(BoolConverter $converter, ?string $reason = null): self
+	{
+		$reason ??= 'bool-only strategy';
+
+		return new self(
+			stringConverter: new NeverStringConverter($reason),
+			numberConverter: new NeverNumberConverter($reason),
+			boolConverter: $converter,
+			nullConverter: new NeverNullConverter($reason),
+			arrayConverter: new NeverArrayConverter($reason),
+			objectSupervisor: new NeverObjectSupervisor($reason),
+		);
+	}
+
+	/**
+	 * @param non-empty-string|null $reason
+	 */
+	public static function forNull(NullConverter $converter, ?string $reason = null): self
+	{
+		$reason ??= 'null-only strategy';
+
+		return new self(
+			stringConverter: new NeverStringConverter($reason),
+			numberConverter: new NeverNumberConverter($reason),
+			boolConverter: new NeverBoolConverter($reason),
+			nullConverter: $converter,
+			arrayConverter: new NeverArrayConverter($reason),
+			objectSupervisor: new NeverObjectSupervisor($reason),
+		);
+	}
+
+	/**
+	 * @param non-empty-string|null $reason
+	 */
+	public static function forArray(ArrayConverter $converter, ?string $reason = null): self
+	{
+		$reason ??= 'array-only strategy';
+
+		return new self(
+			stringConverter: new NeverStringConverter($reason),
+			numberConverter: new NeverNumberConverter($reason),
+			boolConverter: new NeverBoolConverter($reason),
+			nullConverter: new NeverNullConverter($reason),
+			arrayConverter: $converter,
+			objectSupervisor: new NeverObjectSupervisor($reason),
+		);
+	}
+
+	/**
+	 * @param non-empty-string|null $reason
+	 */
+	public static function forObject(ObjectSupervisor $supervisor, ?string $reason = null): self
+	{
+		$reason ??= 'object-only strategy';
+
+		return new self(
+			stringConverter: new NeverStringConverter($reason),
+			numberConverter: new NeverNumberConverter($reason),
+			boolConverter: new NeverBoolConverter($reason),
+			nullConverter: new NeverNullConverter($reason),
+			arrayConverter: new NeverArrayConverter($reason),
+			objectSupervisor: $supervisor,
+		);
 	}
 
 }
