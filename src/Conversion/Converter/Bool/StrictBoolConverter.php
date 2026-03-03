@@ -2,7 +2,9 @@
 
 namespace Shredio\TypeSchema\Conversion\Converter\Bool;
 
-final readonly class StrictBoolConverter implements BoolConverter
+use Shredio\TypeSchema\Conversion\Converter\ConstructableConverter;
+
+final readonly class StrictBoolConverter implements BoolConverter, ConstructableConverter
 {
 
 	public function bool(mixed $value): ?bool
@@ -12,6 +14,11 @@ final readonly class StrictBoolConverter implements BoolConverter
 		}
 
 		return null;
+	}
+
+	public function constructorArguments(): array
+	{
+		return [];
 	}
 
 }

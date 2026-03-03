@@ -2,7 +2,9 @@
 
 namespace Shredio\TypeSchema\Conversion\Converter\String;
 
-final readonly class StrictStringConverter implements StringConverter
+use Shredio\TypeSchema\Conversion\Converter\ConstructableConverter;
+
+final readonly class StrictStringConverter implements StringConverter, ConstructableConverter
 {
 
 	public function string(mixed $value): ?string
@@ -12,6 +14,11 @@ final readonly class StrictStringConverter implements StringConverter
 		}
 
 		return null;
+	}
+
+	public function constructorArguments(): array
+	{
+		return [];
 	}
 
 }

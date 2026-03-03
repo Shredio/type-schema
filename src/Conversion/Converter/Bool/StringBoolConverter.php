@@ -2,7 +2,9 @@
 
 namespace Shredio\TypeSchema\Conversion\Converter\Bool;
 
-final readonly class StringBoolConverter implements BoolConverter
+use Shredio\TypeSchema\Conversion\Converter\ConstructableConverter;
+
+final readonly class StringBoolConverter implements BoolConverter, ConstructableConverter
 {
 
 	/**
@@ -34,6 +36,11 @@ final readonly class StringBoolConverter implements BoolConverter
 		}
 
 		return null;
+	}
+
+	public function constructorArguments(): array
+	{
+		return [$this->trueValues, $this->falseValues];
 	}
 
 }

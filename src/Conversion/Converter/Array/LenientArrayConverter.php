@@ -2,9 +2,10 @@
 
 namespace Shredio\TypeSchema\Conversion\Converter\Array;
 
+use Shredio\TypeSchema\Conversion\Converter\ConstructableConverter;
 use stdClass;
 
-final readonly class LenientArrayConverter implements ArrayConverter
+final readonly class LenientArrayConverter implements ArrayConverter, ConstructableConverter
 {
 
 	public function array(mixed $value, bool $preserveKeys): ?array
@@ -22,6 +23,11 @@ final readonly class LenientArrayConverter implements ArrayConverter
 		}
 
 		return null;
+	}
+
+	public function constructorArguments(): array
+	{
+		return [];
 	}
 
 }

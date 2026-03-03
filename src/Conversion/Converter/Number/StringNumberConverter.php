@@ -2,7 +2,9 @@
 
 namespace Shredio\TypeSchema\Conversion\Converter\Number;
 
-final readonly class StringNumberConverter implements NumberConverter
+use Shredio\TypeSchema\Conversion\Converter\ConstructableConverter;
+
+final readonly class StringNumberConverter implements NumberConverter, ConstructableConverter
 {
 
 	public function int(mixed $value): ?int
@@ -33,6 +35,11 @@ final readonly class StringNumberConverter implements NumberConverter
 		}
 
 		return null;
+	}
+
+	public function constructorArguments(): array
+	{
+		return [];
 	}
 
 }

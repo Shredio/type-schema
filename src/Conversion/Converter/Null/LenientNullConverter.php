@@ -2,7 +2,9 @@
 
 namespace Shredio\TypeSchema\Conversion\Converter\Null;
 
-final readonly class LenientNullConverter implements NullConverter
+use Shredio\TypeSchema\Conversion\Converter\ConstructableConverter;
+
+final readonly class LenientNullConverter implements NullConverter, ConstructableConverter
 {
 
 	public function null(mixed $value): null|false
@@ -12,6 +14,11 @@ final readonly class LenientNullConverter implements NullConverter
 		}
 
 		return false;
+	}
+
+	public function constructorArguments(): array
+	{
+		return [];
 	}
 
 }
