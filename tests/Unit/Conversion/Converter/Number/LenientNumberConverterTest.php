@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Conversion\Converter\Number;
 
+use PHPUnit\Framework\Attributes\RequiresPhp;
 use PHPUnit\Framework\TestCase;
 use Shredio\TypeSchema\Conversion\Converter\Number\LenientNumberConverter;
 
@@ -43,24 +44,44 @@ final class LenientNumberConverterTest extends TestCase
 		$this->assertNull($converter->int(42.001));
 	}
 
-	public function testIntWithFloatPrecisionCheck(): void
+	public function testIntWithZeroEpsilon(): void
 	{
-		$converter = new LenientNumberConverter(checkFloatPrecisionOnCastToInt: true);
+		$converter = new LenientNumberConverter(floatToIntEpsilon: 0.0);
 
 		$this->assertSame(1, $converter->int(1.0));
 		$this->assertNull($converter->int(1.5));
 		$this->assertNull($converter->int(1.0000001));
 	}
 
-	public function testIntWithFloatPrecisionCheckDisabled(): void
+	public function testIntWithEpsilonTolerance(): void
 	{
-		$converter = new LenientNumberConverter(checkFloatPrecisionOnCastToInt: false);
+		$converter = new LenientNumberConverter(floatToIntEpsilon: 1e-7);
 
 		$this->assertSame(1, $converter->int(1.0));
-		$this->assertSame(1, $converter->int(1.5));
+		$this->assertSame(1, $converter->int(1.0 + 1e-8));
+		$this->assertNull($converter->int(1.5));
+		$this->assertNull($converter->int(1.001));
+	}
+
+	public function testIntWithNullEpsilon(): void
+	{
+		$converter = new LenientNumberConverter(floatToIntEpsilon: null);
+
+		$this->assertNull($converter->int(1.0));
+		$this->assertNull($converter->int(1.5));
+		$this->assertNull($converter->int(42.0));
+	}
+
+	public function testIntWithAlwaysFloatToInt(): void
+	{
+		$converter = new LenientNumberConverter(floatToIntEpsilon: LenientNumberConverter::AlwaysFloatToInt);
+
+		$this->assertSame(1, $converter->int(1.0));
+		$this->assertSame(2, $converter->int(1.5));
 		$this->assertSame(3, $converter->int(3.14));
-		$this->assertSame(42, $converter->int(42.999));
+		$this->assertSame(43, $converter->int(42.999));
 		$this->assertSame(-3, $converter->int(-3.14));
+		$this->assertSame(1, $converter->int(0.9));
 	}
 
 	public function testIntWithIntegerStrings(): void
@@ -303,19 +324,20 @@ final class LenientNumberConverterTest extends TestCase
 		$this->assertSame(0.0, $result);
 	}
 
-	public function testIntTruncatesWhenPrecisionCheckDisabled(): void
+	public function testIntWithLargeEpsilon(): void
 	{
-		$converter = new LenientNumberConverter(checkFloatPrecisionOnCastToInt: false);
+		$converter = new LenientNumberConverter(floatToIntEpsilon: 0.5);
 
-		$this->assertSame(0, $converter->int(0.9));
-		$this->assertSame(1, $converter->int(1.9));
-		$this->assertSame(99, $converter->int(99.99));
-		$this->assertSame(-1, $converter->int(-1.9));
+		$this->assertSame(1, $converter->int(1.0));
+		$this->assertSame(1, $converter->int(1.4));
+		$this->assertSame(2, $converter->int(1.5));
+		$this->assertSame(2, $converter->int(1.6));
+		$this->assertSame(-3, $converter->int(-3.14));
 	}
 
 	public function testIntWithFloatEdgeCases(): void
 	{
-		$converter = new LenientNumberConverter(checkFloatPrecisionOnCastToInt: true);
+		$converter = new LenientNumberConverter(floatToIntEpsilon: 0.0);
 
 		$this->assertSame(1, $converter->int(1.0));
 		$this->assertNull($converter->int(1.0 + 1e-15));
@@ -326,6 +348,78 @@ final class LenientNumberConverterTest extends TestCase
 		$converter = new LenientNumberConverter();
 
 		$this->assertSame(1, $converter->int(1.0));
+		$this->assertNull($converter->int(1.5));
+	}
+
+	public function testIntWithRoundHalfUp(): void
+	{
+		$converter = new LenientNumberConverter(
+			floatToIntEpsilon: LenientNumberConverter::AlwaysFloatToInt,
+			roundingMode: PHP_ROUND_HALF_UP,
+		);
+
+		$this->assertSame(2, $converter->int(1.5));
+		$this->assertSame(-2, $converter->int(-1.5));
+		$this->assertSame(3, $converter->int(2.5));
+	}
+
+	public function testIntWithRoundHalfDown(): void
+	{
+		$converter = new LenientNumberConverter(
+			floatToIntEpsilon: LenientNumberConverter::AlwaysFloatToInt,
+			roundingMode: PHP_ROUND_HALF_DOWN,
+		);
+
+		$this->assertSame(1, $converter->int(1.5));
+		$this->assertSame(-1, $converter->int(-1.5));
+		$this->assertSame(2, $converter->int(2.5));
+	}
+
+	public function testIntWithRoundHalfEven(): void
+	{
+		$converter = new LenientNumberConverter(
+			floatToIntEpsilon: LenientNumberConverter::AlwaysFloatToInt,
+			roundingMode: PHP_ROUND_HALF_EVEN,
+		);
+
+		$this->assertSame(2, $converter->int(1.5));
+		$this->assertSame(-2, $converter->int(-1.5));
+		$this->assertSame(2, $converter->int(2.5));
+	}
+
+	public function testIntWithRoundHalfOdd(): void
+	{
+		$converter = new LenientNumberConverter(
+			floatToIntEpsilon: LenientNumberConverter::AlwaysFloatToInt,
+			roundingMode: PHP_ROUND_HALF_ODD,
+		);
+
+		$this->assertSame(1, $converter->int(1.5));
+		$this->assertSame(-1, $converter->int(-1.5));
+		$this->assertSame(3, $converter->int(2.5));
+	}
+
+	#[RequiresPhp('>=8.4')]
+	public function testIntRoundingModeWithRoundingModeEnum(): void
+	{
+		$converter = new LenientNumberConverter(
+			floatToIntEpsilon: LenientNumberConverter::AlwaysFloatToInt,
+			roundingMode: \RoundingMode::HalfTowardsZero,
+		);
+
+		$this->assertSame(1, $converter->int(1.5));
+		$this->assertSame(-1, $converter->int(-1.5));
+	}
+
+	public function testIntRoundingModeDoesNotAffectExactValues(): void
+	{
+		$converter = new LenientNumberConverter(
+			floatToIntEpsilon: LenientNumberConverter::ExactFloatToInt,
+			roundingMode: PHP_ROUND_HALF_DOWN,
+		);
+
+		$this->assertSame(1, $converter->int(1.0));
+		$this->assertSame(42, $converter->int(42.0));
 		$this->assertNull($converter->int(1.5));
 	}
 

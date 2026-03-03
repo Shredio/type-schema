@@ -2,11 +2,22 @@
 
 namespace Shredio\TypeSchema\Conversion\Converter\Number;
 
-final readonly class LenientNumberConverter implements NumberConverter
+use Shredio\TypeSchema\Conversion\Converter\ConstructableConverter;
+
+final readonly class LenientNumberConverter implements NumberConverter, ConstructableConverter
 {
 
+	public const null DisableFloatToInt = null;
+	public const float ExactFloatToInt = 0.0;
+	public const float AlwaysFloatToInt = PHP_FLOAT_MAX;
+	public const float DefaultFloatToIntEpsilon = 1e-7;
+
+	/**
+	 * @param int<1, 4>|\RoundingMode $roundingMode
+	 */
 	public function __construct(
-		private bool $checkFloatPrecisionOnCastToInt = true,
+		private ?float $floatToIntEpsilon = self::ExactFloatToInt,
+		private int|\RoundingMode $roundingMode = PHP_ROUND_HALF_UP,
 	)
 	{
 	}
@@ -17,13 +28,10 @@ final readonly class LenientNumberConverter implements NumberConverter
 			return $value;
 		}
 
-		if (is_float($value)) {
-			if (!$this->checkFloatPrecisionOnCastToInt) {
-				return (int) $value;
-			}
+		if (is_float($value) && $this->floatToIntEpsilon !== null) {
+			$int = (int) round($value, mode: $this->roundingMode);
 
-			$int = (int) $value;
-			if ((float) $int === $value) {
+			if (abs($value - $int) <= $this->floatToIntEpsilon) {
 				return $int;
 			}
 
@@ -56,6 +64,11 @@ final readonly class LenientNumberConverter implements NumberConverter
 		}
 
 		return null;
+	}
+
+	public function constructorArguments(): array
+	{
+		return [$this->floatToIntEpsilon, $this->roundingMode];
 	}
 
 }

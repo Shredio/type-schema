@@ -2,12 +2,22 @@
 
 namespace Shredio\TypeSchema\Conversion\Converter\Number;
 
-final readonly class JsonNumberConverter implements NumberConverter
+use Shredio\TypeSchema\Conversion\Converter\ConstructableConverter;
+
+final readonly class JsonNumberConverter implements NumberConverter, ConstructableConverter
 {
 
+	public const null DisableFloatToInt = null;
+	public const float ExactFloatToInt = 0.0;
+	public const float AlwaysFloatToInt = PHP_FLOAT_MAX;
+	public const float DefaultFloatToIntEpsilon = 1e-7;
+
+	/**
+	 * @param int<1, 4>|\RoundingMode $roundingMode
+	 */
 	public function __construct(
-		private bool $convertFloatToInt = false,
-		private float $convertFloatToIntEpsilon = 1e-7,
+		private ?float $floatToIntEpsilon = self::DisableFloatToInt,
+		private int|\RoundingMode $roundingMode = PHP_ROUND_HALF_UP,
 	)
 	{
 	}
@@ -18,12 +28,14 @@ final readonly class JsonNumberConverter implements NumberConverter
 			return $value;
 		}
 
-		if (
-			$this->convertFloatToInt &&
-			is_float($value) &&
-			abs($value - round($value)) < $this->convertFloatToIntEpsilon
-		) {
-			return (int) $value;
+		if (is_float($value) && $this->floatToIntEpsilon !== null) {
+			$int = (int) round($value, mode: $this->roundingMode);
+
+			if (abs($value - $int) <= $this->floatToIntEpsilon) {
+				return $int;
+			}
+
+			return null;
 		}
 
 		return null;
@@ -36,6 +48,11 @@ final readonly class JsonNumberConverter implements NumberConverter
 		}
 
 		return null;
+	}
+
+	public function constructorArguments(): array
+	{
+		return [$this->floatToIntEpsilon, $this->roundingMode];
 	}
 
 }
