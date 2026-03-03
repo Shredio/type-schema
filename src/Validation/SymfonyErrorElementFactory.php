@@ -46,7 +46,7 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 	{
 		return new ErrorMessage(
 			$this->translator->trans('This field is missing.', [], $this->domain),
-			DeveloperValidationMessageFactory::missingField($definition),
+			DeveloperValidationMessageFactory::missingField(),
 		);
 	}
 
@@ -54,7 +54,7 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 	{
 		return new ErrorMessage(
 			$this->translator->trans('This field was not expected.', [], $this->domain),
-			DeveloperValidationMessageFactory::extraField($definition),
+			DeveloperValidationMessageFactory::extraField(),
 		);
 	}
 
@@ -66,7 +66,7 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 				['compared_value' => $expected],
 				$this->domain,
 			),
-			DeveloperValidationMessageFactory::equalTo($definition, $value, $expected),
+			DeveloperValidationMessageFactory::equalTo($value, $expected),
 		);
 	}
 
@@ -85,7 +85,7 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 	{
 		return new ErrorMessage(
 			$this->translator->trans('The value you selected is not a valid choice.', [], $this->domain),
-			DeveloperValidationMessageFactory::valueNotInAllowedValues($definition, $value, $allowedValues),
+			DeveloperValidationMessageFactory::valueNotInAllowedValues($value, $allowedValues),
 		);
 	}
 
@@ -93,7 +93,7 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 	{
 		return new ErrorMessage(
 			$this->translator->trans('This value should not be blank.', [], $this->domain),
-			DeveloperValidationMessageFactory::notEmpty($definition, $value),
+			DeveloperValidationMessageFactory::notEmpty($value),
 		);
 	}
 
@@ -132,7 +132,7 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 			),
 			default => throw new InvalidArgumentException('Unknown RangeDecision: ' . $decision->name), // should not happen
 		};
-		$developerMessage = DeveloperValidationMessageFactory::numberRangeDecision($definition, $value, $range, $decision);
+		$developerMessage = DeveloperValidationMessageFactory::numberRangeDecision($value, $range, $decision);
 
 		return new ErrorMessage($userMessage, $developerMessage);
 	}
@@ -140,7 +140,7 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 	public function itemCountRange(TypeDefinition $definition, int $count, NumberInclusiveRange $range, RangeInclusiveDecision $decision): ErrorElement
 	{
 		$exactLimit = $range->getExactValue();
-		$developerMessage = DeveloperValidationMessageFactory::itemCountRange($definition, $count, $range, $decision);
+		$developerMessage = DeveloperValidationMessageFactory::itemCountRange($count, $range, $decision);
 		if ($exactLimit !== null) {
 			$userMessage = $this->translator->trans(
 				'This collection should contain exactly {{ limit }} element.|This collection should contain exactly {{ limit }} elements.',

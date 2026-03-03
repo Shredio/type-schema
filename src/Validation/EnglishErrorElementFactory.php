@@ -32,7 +32,7 @@ final readonly class EnglishErrorElementFactory implements ErrorElementFactory
 	{
 		return new ErrorMessage(
 			'Please provide a value for this field.',
-			DeveloperValidationMessageFactory::missingField($definition),
+			DeveloperValidationMessageFactory::missingField(),
 		);
 	}
 
@@ -40,7 +40,7 @@ final readonly class EnglishErrorElementFactory implements ErrorElementFactory
 	{
 		return new ErrorMessage(
 			'This field is not allowed.',
-			DeveloperValidationMessageFactory::extraField($definition),
+			DeveloperValidationMessageFactory::extraField(),
 		);
 	}
 
@@ -48,7 +48,7 @@ final readonly class EnglishErrorElementFactory implements ErrorElementFactory
 	{
 		return new ErrorMessage(
 			sprintf('Must be equal to %s.', $expected),
-			DeveloperValidationMessageFactory::equalTo($definition, $value, $expected),
+			DeveloperValidationMessageFactory::equalTo($value, $expected),
 		);
 	}
 
@@ -67,7 +67,7 @@ final readonly class EnglishErrorElementFactory implements ErrorElementFactory
 	{
 		return new ErrorMessage(
 			'Please choose one of the allowed values.',
-			DeveloperValidationMessageFactory::valueNotInAllowedValues($definition, $value, $allowedValues),
+			DeveloperValidationMessageFactory::valueNotInAllowedValues($value, $allowedValues),
 		);
 	}
 
@@ -75,7 +75,7 @@ final readonly class EnglishErrorElementFactory implements ErrorElementFactory
 	{
 		return new ErrorMessage(
 			'This value must be empty.',
-			DeveloperValidationMessageFactory::notEmpty($definition, $value),
+			DeveloperValidationMessageFactory::notEmpty($value),
 		);
 	}
 
@@ -110,7 +110,7 @@ final readonly class EnglishErrorElementFactory implements ErrorElementFactory
 			),
 			default => throw new InvalidArgumentException('Unknown RangeDecision: ' . $decision->name),
 		};
-		$developerMessage = DeveloperValidationMessageFactory::numberRangeDecision($definition, $value, $range, $decision);
+		$developerMessage = DeveloperValidationMessageFactory::numberRangeDecision($value, $range, $decision);
 
 		return new ErrorMessage($userMessage, $developerMessage);
 	}
@@ -118,7 +118,7 @@ final readonly class EnglishErrorElementFactory implements ErrorElementFactory
 	public function itemCountRange(TypeDefinition $definition, int $count, NumberInclusiveRange $range, RangeInclusiveDecision $decision): ErrorElement
 	{
 		$exactLimit = $range->getExactValue();
-		$developerMessage = DeveloperValidationMessageFactory::itemCountRange($definition, $count, $range, $decision);
+		$developerMessage = DeveloperValidationMessageFactory::itemCountRange($count, $range, $decision);
 		if ($exactLimit !== null) {
 			$userMessage = $exactLimit === 1
 				? 'Must contain exactly 1 item.'

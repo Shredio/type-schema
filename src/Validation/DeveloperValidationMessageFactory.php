@@ -29,7 +29,7 @@ final readonly class DeveloperValidationMessageFactory
 	/**
 	 * @param list<string|int> $path
 	 */
-	public static function missingField(TypeDefinition $definition, array $path = []): string
+	public static function missingField(array $path = []): string
 	{
 		$lastKey = array_key_last($path);
 		if ($lastKey === null) {
@@ -42,7 +42,7 @@ final readonly class DeveloperValidationMessageFactory
 	/**
 	 * @param list<string|int> $path
 	 */
-	public static function extraField(TypeDefinition $definition, array $path = []): string
+	public static function extraField(array $path = []): string
 	{
 		$lastKey = array_key_last($path);
 		if ($lastKey === null) {
@@ -52,7 +52,7 @@ final readonly class DeveloperValidationMessageFactory
 		}
 	}
 
-	public static function notEmpty(TypeDefinition $definition, mixed $value): string
+	public static function notEmpty(mixed $value): string
 	{
 		return sprintf('Value should not be empty, %s given.', self::describeValue($value));
 	}
@@ -60,7 +60,7 @@ final readonly class DeveloperValidationMessageFactory
 	/**
 	 * @param list<string|int> $allowedValues
 	 */
-	public static function valueNotInAllowedValues(TypeDefinition $definition, int|string $value, array $allowedValues): string
+	public static function valueNotInAllowedValues(int|string $value, array $allowedValues): string
 	{
 		$stringAllowedValues = self::selectOnlyStrings($allowedValues);
 		return sprintf(
@@ -72,7 +72,6 @@ final readonly class DeveloperValidationMessageFactory
 	}
 
 	public static function numberRangeDecision(
-		TypeDefinition $definition,
 		mixed $value,
 		NumberRange $range,
 		RangeExclusiveDecision|RangeInclusiveDecision $decision,
@@ -81,12 +80,12 @@ final readonly class DeveloperValidationMessageFactory
 		return sprintf('Value %s is not in the expected range %s.', self::describeValue($value), $range->toString());
 	}
 
-	public static function equalTo(TypeDefinition $definition, mixed $value, string $expected): string
+	public static function equalTo(mixed $value, string $expected): string
 	{
 		return sprintf('Value %s is not equal to %s.', self::describeValue($value), $expected);
 	}
 
-	public static function itemCountRange(TypeDefinition $definition, int $count, NumberInclusiveRange $range, RangeInclusiveDecision $decision): string
+	public static function itemCountRange(int $count, NumberInclusiveRange $range, RangeInclusiveDecision $decision): string
 	{
 		return sprintf('Item count %d is not in the expected range %s.', $count, $range->toString());
 	}
