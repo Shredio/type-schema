@@ -9,14 +9,14 @@ final readonly class LenientNumberConverter implements NumberConverter, Construc
 
 	public const null DisableFloatToInt = null;
 	public const float ExactFloatToInt = 0.0;
-	public const float AlwaysFloatToInt = PHP_FLOAT_MAX;
+	public const true AlwaysFloatToInt = true;
 	public const float DefaultFloatToIntEpsilon = 1e-7;
 
 	/**
 	 * @param int<1, 4>|\RoundingMode $roundingMode
 	 */
 	public function __construct(
-		private ?float $floatToIntEpsilon = self::ExactFloatToInt,
+		private null|true|float $floatToIntEpsilon = self::ExactFloatToInt,
 		private int|\RoundingMode $roundingMode = PHP_ROUND_HALF_UP,
 	)
 	{
@@ -31,7 +31,7 @@ final readonly class LenientNumberConverter implements NumberConverter, Construc
 		if (is_float($value) && is_finite($value) && $this->floatToIntEpsilon !== null) {
 			$int = (int) round($value, mode: $this->roundingMode);
 
-			if (abs($value - $int) <= $this->floatToIntEpsilon) {
+			if ($this->floatToIntEpsilon === true || abs($value - $int) <= $this->floatToIntEpsilon) {
 				return $int;
 			}
 
