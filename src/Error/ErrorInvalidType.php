@@ -41,6 +41,7 @@ final readonly class ErrorInvalidType implements ErrorElement
 			($this->message)($expectedType),
 			DeveloperValidationMessageFactory::invalidType($this->definition, $this->originalValue),
 			$path,
+			ErrorCategory::Structural,
 		)];
 	}
 

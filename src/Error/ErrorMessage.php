@@ -10,13 +10,14 @@ final readonly class ErrorMessage implements ErrorElement
 	public function __construct(
 		public string|Stringable $message,
 		public string|Stringable $messageForDeveloper,
+		public ErrorCategory $category = ErrorCategory::Validation,
 	)
 	{
 	}
 
 	public function getReports(array $path = [], ?ErrorReportConfig $config = null): array
 	{
-		return [new ErrorReport($this->message, $this->messageForDeveloper, $path)];
+		return [new ErrorReport($this->message, $this->messageForDeveloper, $path, $this->category)];
 	}
 
 }

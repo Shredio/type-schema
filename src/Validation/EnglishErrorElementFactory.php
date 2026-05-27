@@ -4,6 +4,7 @@ namespace Shredio\TypeSchema\Validation;
 
 use InvalidArgumentException;
 use Shredio\TypeSchema\Context\TypeDefinition;
+use Shredio\TypeSchema\Error\ErrorCategory;
 use Shredio\TypeSchema\Error\ErrorElement;
 use Shredio\TypeSchema\Error\ErrorInvalidType;
 use Shredio\TypeSchema\Error\ErrorMessage;
@@ -33,6 +34,7 @@ final readonly class EnglishErrorElementFactory implements ErrorElementFactory
 		return new ErrorMessage(
 			'Please provide a value for this field.',
 			DeveloperValidationMessageFactory::missingField(),
+			ErrorCategory::Structural,
 		);
 	}
 
@@ -41,6 +43,7 @@ final readonly class EnglishErrorElementFactory implements ErrorElementFactory
 		return new ErrorMessage(
 			'This field is not allowed.',
 			DeveloperValidationMessageFactory::extraField(),
+			ErrorCategory::Structural,
 		);
 	}
 

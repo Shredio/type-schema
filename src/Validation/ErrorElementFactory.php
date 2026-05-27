@@ -3,6 +3,7 @@
 namespace Shredio\TypeSchema\Validation;
 
 use Shredio\TypeSchema\Context\TypeDefinition;
+use Shredio\TypeSchema\Error\ErrorCategory;
 use Shredio\TypeSchema\Error\ErrorElement;
 use Shredio\TypeSchema\Error\ErrorInvalidType;
 use Shredio\TypeSchema\Error\ErrorMessage;
@@ -46,7 +47,11 @@ interface ErrorElementFactory
 
 	public function invalidDate(mixed $value): ErrorElement;
 
-	public function createError(string|Stringable $message, string|Stringable|null $messageForDeveloper = null): ErrorElement;
+	public function createError(
+		string|Stringable $message,
+		string|Stringable|null $messageForDeveloper = null,
+		ErrorCategory $category = ErrorCategory::Validation,
+	): ErrorElement;
 
 	/**
 	 * @param non-empty-list<ErrorElement> $elements

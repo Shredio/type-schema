@@ -5,6 +5,7 @@ namespace Shredio\TypeSchema\Types;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
 use Shredio\TypeSchema\Exception\ClassMapperNotFoundException;
+use Shredio\TypeSchema\Validation\ValidationFailed;
 
 /**
  * @template T of object
@@ -35,7 +36,11 @@ final readonly class MapperType extends Type implements ClassBoundType
 			throw ClassMapperNotFoundException::notFound($this->className);
 		}
 
-		return $mapper->parse($valueToParse, $context);
+		try {
+			return $mapper->parse($valueToParse, $context);
+		} catch (ValidationFailed $exception) {
+			return $context->errorElementFactory->createCollection($exception->getErrors());
+		}
 	}
 
 	protected function getTypeNode(TypeContext $context): TypeNode

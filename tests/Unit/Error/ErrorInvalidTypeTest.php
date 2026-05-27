@@ -7,6 +7,7 @@ use PHPStan\PhpDocParser\Ast\Type\UnionTypeNode;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Shredio\TypeSchema\Context\TypeDefinition;
+use Shredio\TypeSchema\Error\ErrorCategory;
 use Shredio\TypeSchema\Error\ErrorInvalidType;
 use Shredio\TypeSchema\Error\ErrorReportConfig;
 use Shredio\TypeSchema\Error\Path;
@@ -108,6 +109,20 @@ final class ErrorInvalidTypeTest extends TestCase
 
 		$this->assertStringContainsString('42', (string) $reports[0]->messageForDeveloper);
 		$this->assertStringContainsString('string', (string) $reports[0]->messageForDeveloper);
+	}
+
+	public function testCategoryIsStructural(): void
+	{
+		$definition = new TypeDefinition(new IdentifierTypeNode('string'));
+		$error = new ErrorInvalidType(
+			$definition,
+			fn (?string $type): string => 'Invalid',
+			42,
+		);
+
+		$reports = $error->getReports();
+
+		$this->assertSame(ErrorCategory::Structural, $reports[0]->category);
 	}
 
 }

@@ -4,6 +4,7 @@ namespace Tests\Unit\Error;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Shredio\TypeSchema\Error\ErrorCategory;
 use Shredio\TypeSchema\Error\ErrorMessage;
 use Shredio\TypeSchema\Error\ErrorReport;
 use Shredio\TypeSchema\Error\Path;
@@ -54,6 +55,22 @@ final class ErrorMessageTest extends TestCase
 
 		$this->assertSame('Stringable message', (string) $reports[0]->message);
 		$this->assertSame('Stringable dev message', (string) $reports[0]->messageForDeveloper);
+	}
+
+	public function testDefaultCategoryIsValidation(): void
+	{
+		$error = new ErrorMessage('User message', 'Developer message');
+		$reports = $error->getReports();
+
+		$this->assertSame(ErrorCategory::Validation, $reports[0]->category);
+	}
+
+	public function testCategoryIsForwardedToReport(): void
+	{
+		$error = new ErrorMessage('User message', 'Developer message', ErrorCategory::Structural);
+		$reports = $error->getReports();
+
+		$this->assertSame(ErrorCategory::Structural, $reports[0]->category);
 	}
 
 }

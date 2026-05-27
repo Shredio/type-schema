@@ -4,6 +4,7 @@ namespace Shredio\TypeSchema\Validation;
 
 use InvalidArgumentException;
 use Shredio\TypeSchema\Context\TypeDefinition;
+use Shredio\TypeSchema\Error\ErrorCategory;
 use Shredio\TypeSchema\Error\ErrorCollection;
 use Shredio\TypeSchema\Error\ErrorElement;
 use Shredio\TypeSchema\Error\ErrorInvalidType;
@@ -47,6 +48,7 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 		return new ErrorMessage(
 			$this->translator->trans('This field is missing.', [], $this->domain),
 			DeveloperValidationMessageFactory::missingField(),
+			ErrorCategory::Structural,
 		);
 	}
 
@@ -55,6 +57,7 @@ final readonly class SymfonyErrorElementFactory implements ErrorElementFactory
 		return new ErrorMessage(
 			$this->translator->trans('This field was not expected.', [], $this->domain),
 			DeveloperValidationMessageFactory::extraField(),
+			ErrorCategory::Structural,
 		);
 	}
 

@@ -15,6 +15,7 @@ final readonly class ErrorReport
 		public string|Stringable $message,
 		public string|Stringable $messageForDeveloper,
 		public array $path = [],
+		public ErrorCategory $category = ErrorCategory::Validation,
 	)
 	{
 	}
