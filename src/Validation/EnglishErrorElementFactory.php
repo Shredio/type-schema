@@ -77,7 +77,7 @@ final readonly class EnglishErrorElementFactory implements ErrorElementFactory
 	public function notEmpty(TypeDefinition $definition, mixed $value): ErrorMessage
 	{
 		return new ErrorMessage(
-			'This value must be empty.',
+			'This value should not be blank.',
 			DeveloperValidationMessageFactory::notEmpty($value),
 		);
 	}

@@ -49,6 +49,7 @@ final class EnglishErrorElementFactoryTest extends TestCase
 		$error = $factory->notEmpty($definition, '');
 
 		$this->assertSame(ErrorCategory::Validation, $error->getReports()[0]->category);
+		$this->assertSame('This value should not be blank.', (string) $error->getReports()[0]->message);
 	}
 
 	public function testNumberRangeIsValidation(): void
