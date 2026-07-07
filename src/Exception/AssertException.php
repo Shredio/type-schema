@@ -2,6 +2,7 @@
 
 namespace Shredio\TypeSchema\Exception;
 
+use Shredio\TypeSchema\Error\ErrorCategory;
 use Shredio\TypeSchema\Error\ErrorElement;
 use Shredio\TypeSchema\Error\ErrorReport;
 use Shredio\TypeSchema\Error\TypeSchemaErrorFormatter;
@@ -24,6 +25,17 @@ final class AssertException extends RuntimeException
 	public function getErrors(): array
 	{
 		return $this->errorElement->getReports();
+	}
+
+	/**
+	 * Resolves the overall category across all collected errors.
+	 *
+	 * Returns Structural when at least one error is Structural (typically HTTP 400),
+	 * otherwise Validation (HTTP 422).
+	 */
+	public function getCategory(): ErrorCategory
+	{
+		return ErrorCategory::resolve($this->errorElement->getReports());
 	}
 
 	/**

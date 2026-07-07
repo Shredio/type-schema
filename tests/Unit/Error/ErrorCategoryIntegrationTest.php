@@ -7,6 +7,7 @@ use Shredio\TypeSchema\Enum\ExtraKeysBehavior;
 use Shredio\TypeSchema\Error\ErrorCategory;
 use Shredio\TypeSchema\Error\ErrorElement;
 use Shredio\TypeSchema\Error\ErrorReport;
+use Shredio\TypeSchema\Exception\AssertException;
 use Shredio\TypeSchema\TypeSchema;
 use Shredio\TypeSchema\TypeSchemaProcessor;
 
@@ -110,6 +111,79 @@ final class ErrorCategoryIntegrationTest extends TestCase
 
 		$this->assertSame(ErrorCategory::Structural, $byPath['name'] ?? null);
 		$this->assertSame(ErrorCategory::Validation, $byPath['age'] ?? null);
+	}
+
+	public function testResolveReturnsStructuralWhenAnyReportIsStructural(): void
+	{
+		$processor = TypeSchemaProcessor::createDefault();
+		$schema = TypeSchema::get()->arrayShape([
+			'name' => TypeSchema::get()->string(),
+			'age' => TypeSchema::get()->intRange(min: 18, max: 120),
+		]);
+
+		$reports = $this->getReports($processor->parse(
+			['name' => 42, 'age' => 5],
+			$schema,
+			collectErrors: true,
+		));
+
+		$this->assertSame(ErrorCategory::Structural, ErrorCategory::resolve($reports));
+		$this->assertTrue(ErrorCategory::hasStructural($reports));
+	}
+
+	public function testResolveReturnsValidationWhenAllReportsAreValidation(): void
+	{
+		$processor = TypeSchemaProcessor::createDefault();
+		$schema = TypeSchema::get()->arrayShape([
+			'age' => TypeSchema::get()->intRange(min: 18, max: 120),
+			'score' => TypeSchema::get()->intRange(min: 0, max: 100),
+		]);
+
+		$reports = $this->getReports($processor->parse(
+			['age' => 5, 'score' => 500],
+			$schema,
+			collectErrors: true,
+		));
+
+		$this->assertSame(ErrorCategory::Validation, ErrorCategory::resolve($reports));
+		$this->assertFalse(ErrorCategory::hasStructural($reports));
+	}
+
+	public function testResolveReturnsValidationForEmptyReports(): void
+	{
+		$this->assertSame(ErrorCategory::Validation, ErrorCategory::resolve([]));
+		$this->assertFalse(ErrorCategory::hasStructural([]));
+	}
+
+	public function testAssertExceptionCategoryIsStructuralWhenAnyErrorIsStructural(): void
+	{
+		$processor = TypeSchemaProcessor::createDefault();
+		$schema = TypeSchema::get()->arrayShape([
+			'name' => TypeSchema::get()->string(),
+			'age' => TypeSchema::get()->intRange(min: 18, max: 120),
+		]);
+
+		try {
+			$processor->process(['name' => 42, 'age' => 5], $schema);
+			$this->fail('Expected AssertException was not thrown.');
+		} catch (AssertException $exception) {
+			$this->assertSame(ErrorCategory::Structural, $exception->getCategory());
+		}
+	}
+
+	public function testAssertExceptionCategoryIsValidationWhenAllErrorsAreValidation(): void
+	{
+		$processor = TypeSchemaProcessor::createDefault();
+		$schema = TypeSchema::get()->arrayShape([
+			'age' => TypeSchema::get()->intRange(min: 18, max: 120),
+		]);
+
+		try {
+			$processor->process(['age' => 5], $schema);
+			$this->fail('Expected AssertException was not thrown.');
+		} catch (AssertException $exception) {
+			$this->assertSame(ErrorCategory::Validation, $exception->getCategory());
+		}
 	}
 
 	public function testNestedStructuralErrorKeepsCategory(): void

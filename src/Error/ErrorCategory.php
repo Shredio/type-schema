@@ -19,4 +19,32 @@ enum ErrorCategory
 	 */
 	case Validation;
 
+	/**
+	 * Resolves the overall category for a set of reports.
+	 *
+	 * A single Structural report takes precedence: if any report is Structural,
+	 * the whole set is Structural (typically mapped to HTTP 400), otherwise Validation (422).
+	 * An empty set is treated as Validation.
+	 *
+	 * @param iterable<ErrorReport> $reports
+	 */
+	public static function resolve(iterable $reports): self
+	{
+		foreach ($reports as $report) {
+			if ($report->category === self::Structural) {
+				return self::Structural;
+			}
+		}
+
+		return self::Validation;
+	}
+
+	/**
+	 * @param iterable<ErrorReport> $reports
+	 */
+	public static function hasStructural(iterable $reports): bool
+	{
+		return self::resolve($reports) === self::Structural;
+	}
+
 }
