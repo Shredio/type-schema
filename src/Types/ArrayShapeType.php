@@ -6,14 +6,20 @@ use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprIntegerNode;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprStringNode;
 use PHPStan\PhpDocParser\Ast\Type\ArrayShapeItemNode;
 use PHPStan\PhpDocParser\Ast\Type\ArrayShapeNode;
+use PHPStan\PhpDocParser\Ast\Type\ArrayShapeUnsealedTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
-use Shredio\TypeSchema\Enum\ExtraKeysBehavior;
-use Shredio\TypeSchema\Error\ErrorElement;
-use Shredio\TypeSchema\Error\IdentifiedPath;
+use Shredio\TypeSchema\Issue\ExtraKey;
+use Shredio\TypeSchema\Issue\IdentifiedPath;
+use Shredio\TypeSchema\Issue\MissingKey;
+use Shredio\TypeSchema\Result\Failure;
+use Shredio\TypeSchema\Result\IssueCollector;
+use Shredio\TypeSchema\Result\WithNotices;
 
 /**
+ * Keys not defined in the shape are removed and reported as ExtraKey notices, unless a rest type makes the shape open.
+ *
  * @template TKey of array-key
  * @template TValue
  *
@@ -30,11 +36,12 @@ final readonly class ArrayShapeType extends Type
 
 	/**
 	 * @param array<TKey, Type<TValue>> $elements
+	 * @param Type<mixed>|null $rest type of values under keys not defined in the shape, null for a closed shape
 	 * @param non-empty-string|null $identifier
 	 */
 	public function __construct(
 		array $elements,
-		private ?ExtraKeysBehavior $extraKeys = null,
+		private ?Type $rest = null,
 		private ?string $identifier = null,
 	)
 	{
@@ -52,47 +59,22 @@ final readonly class ArrayShapeType extends Type
 		$this->optional = $optional;
 	}
 
-	/**
-	 * @return self<TKey, TValue>
-	 */
-	public function withExtraKeysBehavior(?ExtraKeysBehavior $behavior): self
-	{
-		if (PHP_VERSION_ID >= 80500) {
-			// remove call_user_func on PHP 8.5+
-			return call_user_func('clone', $this, [ // @phpstan-ignore-line
-				'extraKeys' => $behavior,
-			]);
-		}
-
-		return new self(
-			[...$this->required, ...$this->optional],
-			$behavior,
-			$this->identifier,
-		);
-	}
-
 	public function parse(mixed $valueToParse, TypeContext $context): mixed
 	{
 		$value = $context->conversionStrategy->array($valueToParse, true);
 		if ($value === null) {
-			return $context->errorElementFactory->invalidType($this->createDefinition($context), $valueToParse);
+			return $this->createInvalidTypeFailure($valueToParse, $context);
 		}
 
 		$return = [];
-		$errors = [];
+		$issues = null;
 		$nestedContexts = $context->getNestedContexts();
 		foreach ($this->required as $key => $type) {
-			if (!array_key_exists($key, $value)) { // missing required key
-				$error = $this->createChildError(
-					$context->errorElementFactory->missingField($this->createDefinition($context)),
-					$key,
-					IdentifiedPath::create($this->identifier, $return),
-				);
-
-				if ($context->collectErrors) {
-					$errors[] = $error;
-				} else {
-					return $error;
+			if (!array_key_exists($key, $value)) {
+				$issues ??= new IssueCollector();
+				$issues->addError(new MissingKey(), $key, IdentifiedPath::create($this->identifier, $return));
+				if (!$context->collectErrors) {
+					return $issues->createFailure();
 				}
 
 				continue;
@@ -100,54 +82,58 @@ final readonly class ArrayShapeType extends Type
 
 			$ret = $type->parse($value[$key], $nestedContexts[$key] ?? $context);
 			unset($value[$key]);
-			if (!$ret instanceof ErrorElement) {
-				$return[$key] = $ret;
-			} else if ($context->collectErrors) { // error in the required key
-				$errors[] = $this->createChildError($ret, $key, IdentifiedPath::create($this->identifier, $return));
-			} else { // error in the required key
-				return $this->createChildError($ret, $key, IdentifiedPath::create($this->identifier, $return));
-			}
-		}
-
-		$extraKeysBehavior = $this->extraKeys ?? $context->defaultExtraKeysBehavior ?? ExtraKeysBehavior::Reject;
-		foreach ($value as $key => $val) {
-			if (!isset($this->optional[$key])) {
-				if ($extraKeysBehavior === ExtraKeysBehavior::Reject) {
-					$error = $this->createChildError(
-						$context->errorElementFactory->extraField($this->createDefinition($context)),
-						$key,
-						IdentifiedPath::create($this->identifier, $return),
-					);
-
-					if ($context->collectErrors) {
-						$errors[] = $error;
-					} else {
-						return $error;
-					}
-
-					continue;
-				} else if ($extraKeysBehavior === ExtraKeysBehavior::Accept) {
-					$return[$key] = $val;
+			if ($ret instanceof Failure) {
+				$issues ??= new IssueCollector();
+				$issues->addChild($ret, $key, IdentifiedPath::create($this->identifier, $return));
+				if (!$context->collectErrors) {
+					return $issues->createFailure();
 				}
 
 				continue;
 			}
 
-			$ret = $this->optional[$key]->parse($val, $nestedContexts[$key] ?? $context);
-			if (!$ret instanceof ErrorElement) {
-				$return[$key] = $ret;
-			} else if ($context->collectErrors) {
-				$errors[] = $this->createChildError($ret, $key, IdentifiedPath::create($this->identifier, $return));
-			} else {
-				return $this->createChildError($ret, $key, IdentifiedPath::create($this->identifier, $return));
+			if ($ret instanceof WithNotices) {
+				$issues ??= new IssueCollector();
+				$issues->addChild($ret, $key, IdentifiedPath::create($this->identifier, $return));
+				$ret = $ret->value;
 			}
+
+			$return[$key] = $ret;
 		}
 
-		if ($errors !== []) {
-			return $this->createErrorCollection($errors);
+		foreach ($value as $key => $val) {
+			$type = $this->optional[$key] ?? $this->rest;
+			if ($type === null) {
+				$issues ??= new IssueCollector();
+				$issues->addNotice(new ExtraKey(), $key, IdentifiedPath::create($this->identifier, $return));
+
+				continue;
+			}
+
+			$ret = $type->parse($val, $nestedContexts[$key] ?? $context);
+			if ($ret instanceof Failure) {
+				$issues ??= new IssueCollector();
+				$issues->addChild($ret, $key, IdentifiedPath::create($this->identifier, $return));
+				if (!$context->collectErrors) {
+					return $issues->createFailure();
+				}
+
+				continue;
+			}
+
+			if ($ret instanceof WithNotices) {
+				$issues ??= new IssueCollector();
+				$issues->addChild($ret, $key, IdentifiedPath::create($this->identifier, $return));
+				$ret = $ret->value;
+			}
+
+			$return[$key] = $ret;
 		}
 
-		return $return;
+		/** @var array<TKey, TValue> $parsedValue */
+		$parsedValue = $return;
+
+		return $issues === null ? $parsedValue : $issues->createResult($parsedValue);
 	}
 
 	protected function getTypeNode(TypeContext $context): TypeNode
@@ -160,7 +146,15 @@ final readonly class ArrayShapeType extends Type
 			$items[] = new ArrayShapeItemNode($this->createTypeForKey($key), true, $type->getTypeNode($context));
 		}
 
-		return ArrayShapeNode::createSealed($items, ArrayShapeNode::KIND_ARRAY); // TODO: unsealed if extraKeys allowed
+		if ($this->rest === null) {
+			return ArrayShapeNode::createSealed($items, ArrayShapeNode::KIND_ARRAY);
+		}
+
+		return ArrayShapeNode::createUnsealed(
+			$items,
+			new ArrayShapeUnsealedTypeNode($this->rest->getTypeNode($context), null),
+			ArrayShapeNode::KIND_ARRAY,
+		);
 	}
 
 	private function createTypeForKey(string|int $key): ConstExprIntegerNode|IdentifierTypeNode|ConstExprStringNode

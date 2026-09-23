@@ -25,11 +25,11 @@ final readonly class ObjectType extends Type
 	public function parse(mixed $valueToParse, TypeContext $context): object
 	{
 		if (!is_object($valueToParse)) {
-			return $context->errorElementFactory->invalidType($this->createDefinition($context), $valueToParse);
+			return $this->createInvalidTypeFailure($valueToParse, $context);
 		}
 
 		if ($this->name !== null && !is_a($valueToParse, $this->name)) {
-			return $context->errorElementFactory->invalidType($this->createDefinition($context), $valueToParse);
+			return $this->createInvalidTypeFailure($valueToParse, $context);
 		}
 
 		return $valueToParse; // @phpstan-ignore return.type

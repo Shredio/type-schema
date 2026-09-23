@@ -5,7 +5,7 @@ namespace Shredio\TypeSchema\Types;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
-use Shredio\TypeSchema\Error\ErrorElement;
+use Shredio\TypeSchema\Result\Failure;
 
 /**
  * @extends Type<int>
@@ -13,11 +13,11 @@ use Shredio\TypeSchema\Error\ErrorElement;
 final readonly class IntType extends Type
 {
 
-	public function parse(mixed $valueToParse, TypeContext $context): ErrorElement|int
+	public function parse(mixed $valueToParse, TypeContext $context): Failure|int
 	{
 		$value = $context->conversionStrategy->int($valueToParse);
 		if ($value === null) {
-			return $context->errorElementFactory->invalidType($this->createDefinition($context), $valueToParse);
+			return $this->createInvalidTypeFailure($valueToParse, $context);
 		}
 
 		return $value;

@@ -5,7 +5,8 @@ namespace Shredio\TypeSchema\Types;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
-use Shredio\TypeSchema\Error\ErrorElement;
+use Shredio\TypeSchema\Issue\EmptyValue;
+use Shredio\TypeSchema\Result\Failure;
 
 /**
  * @extends DecorateType<non-empty-string, string>
@@ -13,10 +14,10 @@ use Shredio\TypeSchema\Error\ErrorElement;
 final readonly class NonEmptyStringType extends DecorateType
 {
 
-	protected function decorate(mixed $value, TypeContext $context): ErrorElement|string
+	protected function decorate(mixed $value, TypeContext $context): Failure|string
 	{
 		if ($value === '') {
-			return $context->errorElementFactory->notEmpty($this->createDefinition($context), $value);
+			return new Failure(new EmptyValue($value));
 		}
 
 		return $value;

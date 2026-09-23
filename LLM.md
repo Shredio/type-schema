@@ -55,20 +55,25 @@ $s->object(Foo::class)      // Type<Foo> - validates instanceof
 
 ## Validating Data
 
-`TypeSchemaProcessor` provides three validation methods:
+`TypeSchemaProcessor` provides these validation methods:
 
 ```php
-// Returns T|ErrorElement - no exceptions
-$result = $processor->parse($data, $type);
-if ($result instanceof ErrorElement) { /* handle error */ }
+use Shredio\TypeSchema\Result\Failure;
 
-// Returns T, throws AssertException on failure (collects all errors)
+// Returns Success<T>|Failure - no exceptions, notices (e.g. extra keys) do not make it fail
+$result = $processor->parse($data, $type);
+if ($result instanceof Failure) { /* handle errors */ }
+$result->value;            // T
+$result->hasNotices();     // non-critical problems, e.g. removed extra keys
+$result->getNoticeReports();
+
+// Returns T, throws AssertException on failure (collects all errors, notices are errors)
 $result = $processor->process($data, $type);
 
-// Returns T, throws AssertException on failure (stops at first error, faster)
+// Returns T, throws AssertException on failure (stops at first error, faster, notices are errors)
 $result = $processor->processFast($data, $type);
 
-// Returns bool
+// Returns bool - true only without errors and without notices
 $isValid = $processor->matches($data, $type);
 ```
 
@@ -108,10 +113,10 @@ Chain `after()` and `validate()` on any type:
 // Transform after successful parse
 $s->string()->after(fn(string $v): string => trim($v))
 
-// Custom validation - return ErrorElement on failure, null on success
-$s->string()->validate(function (string $v, TypeContext $ctx): ?ErrorElement {
+// Custom validation - return an issue on failure, null on success
+$s->string()->validate(function (string $v): ?IssueNode {
     return strlen($v) < 3
-        ? $ctx->errorElementFactory->createError('Too short')
+        ? new CustomIssue('Too short')
         : null;
 })
 
@@ -124,25 +129,37 @@ $s->before(
 
 ## Extra Keys in Array Shapes
 
+Keys not defined in a closed shape are removed from the result and reported as `ExtraKey` notices.
+The caller decides what to do with them:
+
 ```php
-use Shredio\TypeSchema\Enum\ExtraKeysBehavior;
+$result = $processor->parse($data, $s->arrayShape([...]));
 
-// Reject extra keys (default when not configured)
-$s->arrayShape([...], ExtraKeysBehavior::Reject)
+// strict: treat notices as errors (process(), processFast() and matches() do this)
+$result = $result->withNoticesAsErrors();
 
-// Accept and keep extra keys
-$s->arrayShape([...], ExtraKeysBehavior::Accept)
+// lenient: log notices and continue
+foreach ($result->getNoticeReports() as $notice) {
+    $logger->notice($notice->messageForDeveloper, ['path' => $notice->toDebugPathString()]);
+}
 
-// Silently strip extra keys
-$s->arrayShape([...], ExtraKeysBehavior::Ignore)
+// open shape: extra keys are parsed with the rest type and kept
+$s->arrayShape([...], rest: $s->mixed())
+$s->arrayShape([...], rest: $s->string())
 ```
 
 ## Error Handling
 
+Errors are data (`Shredio\TypeSchema\Issue\*`: `InvalidType`, `MissingKey`, `ExtraKey`, `NumberOutOfRange`, ...).
+User-facing messages are produced after parsing by an `IssueRenderer` (`Issue\Renderer\EnglishIssueRenderer`,
+`Issue\Renderer\SymfonyIssueRenderer`) into `Issue\Report\ErrorReport` objects.
+Each issue has an `ErrorCategory`: `Structural` (typically HTTP 400) or `Validation` (typically HTTP 422).
+
 ```php
 use Shredio\TypeSchema\Exception\AssertException;
-use Shredio\TypeSchema\Error\ErrorElement;
-use Shredio\TypeSchema\Error\TypeSchemaErrorFormatter;
+use Shredio\TypeSchema\Issue\ErrorCategory;
+use Shredio\TypeSchema\Issue\Report\TypeSchemaErrorFormatter;
+use Shredio\TypeSchema\Result\Failure;
 
 // With process() / processFast():
 try {
@@ -151,15 +168,18 @@ try {
     echo $e->toPrettyString();
 
     foreach ($e->getErrors() as $error) {
-        $error->message;              // user-facing
+        $error->message;              // user-facing, rendered by the processor's renderer
         $error->messageForDeveloper;  // developer-facing
         $error->toDebugPathString();  // e.g. "address.city"
+        $error->issue;                // raw issue data
     }
 }
 
 // With parse():
 $result = $processor->parse($data, $type);
-if ($result instanceof ErrorElement) {
+if ($result instanceof Failure) {
+    $status = $result->getCategory() === ErrorCategory::Structural ? 400 : 422;
+    $reports = $result->getReports($processor->getIssueRenderer());
     echo TypeSchemaErrorFormatter::prettyString($result);
 }
 ```
@@ -201,8 +221,8 @@ try {
 ## Key Design Points
 
 - All types are immutable `readonly` classes
-- `parse()` returns `T|ErrorElement` (no exceptions)
-- `process()` throws `AssertException` with collected errors
+- `parse()` returns `Success<T>|Failure` (no exceptions), notices are left to the caller
+- `process()` throws `AssertException` with collected errors, notices are treated as errors
 - PHPStan infers return types from schema definitions
 - Types are composable: `nullable(list(arrayShape([...])))`
 - Custom mappers handle BackedEnum and DateTime out of the box

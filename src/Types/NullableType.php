@@ -5,9 +5,7 @@ namespace Shredio\TypeSchema\Types;
 use PHPStan\PhpDocParser\Ast\Type\NullableTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
-use Shredio\TypeSchema\Context\TypeDefinition;
-use Shredio\TypeSchema\Error\ErrorElement;
-use Shredio\TypeSchema\Error\ErrorInvalidType;
+use Shredio\TypeSchema\Result\Failure;
 
 /**
  * @template T
@@ -37,7 +35,7 @@ final readonly class NullableType extends Type
 		}
 
 		$value = $this->type->parse($valueToParse, $context);
-		if (!$value instanceof ErrorElement) {
+		if (!$value instanceof Failure) {
 			return $value;
 		}
 
@@ -48,11 +46,7 @@ final readonly class NullableType extends Type
 			return null;
 		}
 
-		if ($value instanceof ErrorInvalidType) {
-			$value->withDefinition($this->createDefinition($context));
-		}
-
-		return $value;
+		return $this->withOwnDefinition($value, $context);
 	}
 
 	protected function getTypeNode(TypeContext $context): TypeNode

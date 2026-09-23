@@ -7,6 +7,10 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use Shredio\TypeSchema\Context\TypeContext;
 use Shredio\TypeSchema\Helper\NumberExclusiveRange;
+use Shredio\TypeSchema\Issue\InvalidDate;
+use Shredio\TypeSchema\Issue\InvalidType;
+use Shredio\TypeSchema\Issue\NumberOutOfRange;
+use Shredio\TypeSchema\Result\Failure;
 use Shredio\TypeSchema\Mapper\Options\DateTimeOptions;
 
 /**
@@ -40,20 +44,15 @@ final readonly class DateTimeClassMapper extends ClassMapper
 				}
 			}
 
-			return $context->errorElementFactory->invalidDate($valueToParse);
+			return new Failure(new InvalidDate($valueToParse));
 		} else if (is_int($valueToParse)) {
 			if (!$options->allowIntAsTimestamp) {
-				return $context->errorElementFactory->invalidType($this->createNamedDefinition('string'), $valueToParse);
+				return new Failure(new InvalidType($this->createNamedDefinition('string'), $valueToParse));
 			}
 
 			if ($valueToParse < 0) {
 				$range = NumberExclusiveRange::fromInts(0);
-				return $context->errorElementFactory->numberRange(
-					$this->createNamedDefinition('int'),
-					$valueToParse,
-					$range,
-					$range->decide($valueToParse),
-				);
+				return new Failure(new NumberOutOfRange($valueToParse, $range, $range->decide($valueToParse)));
 			}
 
 			$dateTime = (new DateTime())->setTimestamp($valueToParse);
@@ -66,7 +65,7 @@ final readonly class DateTimeClassMapper extends ClassMapper
 			$def = $this->createNamedDefinition('string');
 		}
 
-		return $context->errorElementFactory->invalidType($def, $valueToParse);
+		return new Failure(new InvalidType($def, $valueToParse));
 	}
 
 }

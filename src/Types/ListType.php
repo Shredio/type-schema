@@ -6,7 +6,9 @@ use PHPStan\PhpDocParser\Ast\Type\GenericTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
-use Shredio\TypeSchema\Error\ErrorElement;
+use Shredio\TypeSchema\Result\Failure;
+use Shredio\TypeSchema\Result\IssueCollector;
+use Shredio\TypeSchema\Result\WithNotices;
 
 /**
  * @template T
@@ -24,39 +26,46 @@ final readonly class ListType extends Type
 	{
 	}
 
-	public function parse(mixed $valueToParse, TypeContext $context): ErrorElement|array
+	public function parse(mixed $valueToParse, TypeContext $context): mixed
 	{
 		$value = $context->conversionStrategy->array($valueToParse, true);
 		if ($value === null) {
-			return $context->errorElementFactory->invalidType($this->createDefinition($context), $valueToParse);
+			return $this->createInvalidTypeFailure($valueToParse, $context);
 		}
 
 		$return = [];
-		$errors = [];
+		$issues = null;
 		$expectedKey = 0;
 		foreach ($value as $key => $item) {
 			if ($key !== $expectedKey) {
-				return $context->errorElementFactory->invalidType($this->createDefinition($context), $valueToParse);
-			}
-
-			$elementValue = $this->itemType->parse($item, $context);
-			if (!$elementValue instanceof ErrorElement) {
-				$return[] = $elementValue;
-			} else if ($context->collectErrors) {
-				$errors[] = $this->createChildError($elementValue, $key);
-			} else {
-				return $this->createChildError($elementValue, $key);
+				return $this->createInvalidTypeFailure($valueToParse, $context);
 			}
 
 			$expectedKey++;
+			$elementValue = $this->itemType->parse($item, $context);
+			if ($elementValue instanceof Failure) {
+				$issues ??= new IssueCollector();
+				$issues->addChild($elementValue, $key);
+				if (!$context->collectErrors) {
+					return $issues->createFailure();
+				}
+
+				continue;
+			}
+
+			if ($elementValue instanceof WithNotices) {
+				$issues ??= new IssueCollector();
+				$issues->addChild($elementValue, $key);
+				$elementValue = $elementValue->value;
+			}
+
+			$return[] = $elementValue;
 		}
 
-		if ($errors !== []) {
-			return $this->createErrorCollection($errors);
-		}
+		/** @var list<T> $parsedValue */
+		$parsedValue = $return;
 
-		/** @var list<T> */
-		return $return;
+		return $issues === null ? $parsedValue : $issues->createResult($parsedValue);
 	}
 
 	protected function getTypeNode(TypeContext $context): TypeNode

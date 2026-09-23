@@ -6,7 +6,9 @@ use PHPStan\PhpDocParser\Ast\Type\GenericTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
-use Shredio\TypeSchema\Error\ErrorElement;
+use Shredio\TypeSchema\Result\Failure;
+use Shredio\TypeSchema\Result\IssueCollector;
+use Shredio\TypeSchema\Result\WithNotices;
 
 /**
  * @template TKey of array-key
@@ -27,28 +29,34 @@ final readonly class ArrayType extends Type
 	{
 	}
 
-	public function parse(mixed $valueToParse, TypeContext $context): ErrorElement|array
+	public function parse(mixed $valueToParse, TypeContext $context): mixed
 	{
 		$value = $context->conversionStrategy->array($valueToParse, true);
 		if ($value === null) {
-			return $context->errorElementFactory->invalidType($this->createDefinition($context), $valueToParse);
+			return $this->createInvalidTypeFailure($valueToParse, $context);
 		}
 
 		$checkKey = !$this->keyType instanceof ArrayKeyType; // optimization, no need to check keys if they are array-keys
 		$return = [];
-		$errors = [];
+		$issues = null;
 		foreach ($value as $key => $item) {
 			// Key
 			if ($checkKey) {
 				$parsedKey = $this->keyType->parse($key, $context);
-				if ($parsedKey instanceof ErrorElement) {
-					$error = $this->createChildError($parsedKey, $key);
-					if ($context->collectErrors) {
-						$errors[] = $error;
-						continue;
+				if ($parsedKey instanceof Failure) {
+					$issues ??= new IssueCollector();
+					$issues->addChild($parsedKey, $key);
+					if (!$context->collectErrors) {
+						return $issues->createFailure();
 					}
 
-					return $error;
+					continue;
+				}
+
+				if ($parsedKey instanceof WithNotices) {
+					$issues ??= new IssueCollector();
+					$issues->addChild($parsedKey, $key);
+					$parsedKey = $parsedKey->value;
 				}
 			} else {
 				$parsedKey = $key;
@@ -56,26 +64,30 @@ final readonly class ArrayType extends Type
 
 			// Value
 			$parsedValue = $this->valueType->parse($item, $context);
-			if ($parsedValue instanceof ErrorElement) {
-				$error = $this->createChildError($parsedValue, $key);
-				if ($context->collectErrors) {
-					$errors[] = $error;
-				} else {
-					return $error;
+			if ($parsedValue instanceof Failure) {
+				$issues ??= new IssueCollector();
+				$issues->addChild($parsedValue, $key);
+				if (!$context->collectErrors) {
+					return $issues->createFailure();
 				}
 
 				continue;
 			}
 
+			if ($parsedValue instanceof WithNotices) {
+				$issues ??= new IssueCollector();
+				$issues->addChild($parsedValue, $key);
+				$parsedValue = $parsedValue->value;
+			}
+
+			/** @var array-key $parsedKey */
 			$return[$parsedKey] = $parsedValue;
 		}
 
-		if ($errors !== []) {
-			return $this->createErrorCollection($errors);
-		}
+		/** @var array<TKey, TValue> $parsedValue */
+		$parsedValue = $return;
 
-		/** @var array<TKey, TValue> */
-		return $return;
+		return $issues === null ? $parsedValue : $issues->createResult($parsedValue);
 	}
 
 	protected function getTypeNode(TypeContext $context): TypeNode

@@ -4,15 +4,18 @@ namespace Tests\Unit\Helper;
 
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use Shredio\TypeSchema\Context\TypeDefinition;
-use Shredio\TypeSchema\Error\ErrorCollection;
-use Shredio\TypeSchema\Error\ErrorElement;
-use Shredio\TypeSchema\Error\ErrorInvalidType;
-use Shredio\TypeSchema\Error\ErrorMessage;
-use Shredio\TypeSchema\Error\ErrorPath;
-use Shredio\TypeSchema\Error\ErrorReportConfig;
-use Shredio\TypeSchema\Error\Path;
-use Shredio\TypeSchema\Error\TypeSchemaErrorFormatter;
 use Shredio\TypeSchema\Helper\TypeSchemaHelper;
+use Shredio\TypeSchema\Issue\CustomIssue;
+use Shredio\TypeSchema\Issue\ExtraKey;
+use Shredio\TypeSchema\Issue\InvalidType;
+use Shredio\TypeSchema\Issue\IssueCollection;
+use Shredio\TypeSchema\Issue\IssuePath;
+use Shredio\TypeSchema\Issue\Path;
+use Shredio\TypeSchema\Issue\Report\ErrorReport;
+use Shredio\TypeSchema\Issue\Report\ErrorReportConfig;
+use Shredio\TypeSchema\Issue\Report\TypeSchemaErrorFormatter;
+use Shredio\TypeSchema\Result\Failure;
+use Shredio\TypeSchema\Result\Success;
 use Shredio\TypeSchema\TypeSchema;
 use Tests\TestCase;
 
@@ -39,70 +42,38 @@ final class TypeSchemaHelperTest extends TestCase
 
 	public function testMergeErrorsReturnsCollection(): void
 	{
-		$first = new ErrorMessage('first', 'dev first');
-		$second = new ErrorMessage('second', 'dev second');
+		$first = new CustomIssue('first', 'dev first');
+		$second = new CustomIssue('second', 'dev second');
 
 		$result = TypeSchemaHelper::mergeErrors($first, $second);
 
-		self::assertInstanceOf(ErrorCollection::class, $result);
-		self::assertCount(2, $result->collection);
-		self::assertSame($first, $result->collection[0]);
-		self::assertSame($second, $result->collection[1]);
-	}
-
-	public function testMergeErrorsReportsAreMerged(): void
-	{
-		$first = new ErrorMessage('msg1', 'dev1');
-		$second = new ErrorMessage('msg2', 'dev2');
-
-		$result = TypeSchemaHelper::mergeErrors($first, $second);
-		$reports = $result->getReports();
-
-		self::assertCount(2, $reports);
-		self::assertSame('msg1', (string) $reports[0]->message);
-		self::assertSame('msg2', (string) $reports[1]->message);
+		self::assertInstanceOf(IssueCollection::class, $result);
+		self::assertCount(2, $result->nodes);
+		self::assertSame($first, $result->nodes[0]);
+		self::assertSame($second, $result->nodes[1]);
 	}
 
 	public function testMergeErrorsWithPaths(): void
 	{
-		$first = new ErrorPath(new ErrorMessage('msg1', 'dev1'), new Path('field1'));
-		$second = new ErrorPath(new ErrorMessage('msg2', 'dev2'), new Path('field2'));
+		$first = new IssuePath(new CustomIssue('msg1', 'dev1'), new Path('field1'));
+		$second = new IssuePath(new CustomIssue('msg2', 'dev2'), new Path('field2'));
 
-		$result = TypeSchemaHelper::mergeErrors($first, $second);
-		$reports = $result->getReports();
+		$issues = TypeSchemaHelper::mergeErrors($first, $second)->getIssues();
 
-		self::assertCount(2, $reports);
-		self::assertSame('field1', $reports[0]->path[0]->path);
-		self::assertSame('field2', $reports[1]->path[0]->path);
+		self::assertCount(2, $issues);
+		self::assertSame('field1', $issues[0]->path[0]->path);
+		self::assertSame('field2', $issues[1]->path[0]->path);
 	}
 
 	public function testMergeErrorsCollectionAsFirstElement(): void
 	{
-		$first = new ErrorCollection([
-			new ErrorMessage('a', 'dev a'),
-			new ErrorMessage('b', 'dev b'),
+		$first = new IssueCollection([
+			new CustomIssue('a', 'dev a'),
+			new CustomIssue('b', 'dev b'),
 		]);
-		$second = new ErrorMessage('c', 'dev c');
+		$second = new CustomIssue('c', 'dev c');
 
-		$result = TypeSchemaHelper::mergeErrors($first, $second);
-		$reports = $result->getReports();
-
-		self::assertCount(3, $reports);
-		self::assertSame('a', (string) $reports[0]->message);
-		self::assertSame('b', (string) $reports[1]->message);
-		self::assertSame('c', (string) $reports[2]->message);
-	}
-
-	public function testMergeErrorsCollectionAsSecondElement(): void
-	{
-		$first = new ErrorMessage('a', 'dev a');
-		$second = new ErrorCollection([
-			new ErrorMessage('b', 'dev b'),
-			new ErrorMessage('c', 'dev c'),
-		]);
-
-		$result = TypeSchemaHelper::mergeErrors($first, $second);
-		$reports = $result->getReports();
+		$reports = ErrorReport::fromIssues(TypeSchemaHelper::mergeErrors($first, $second));
 
 		self::assertCount(3, $reports);
 		self::assertSame('a', (string) $reports[0]->message);
@@ -112,91 +83,45 @@ final class TypeSchemaHelperTest extends TestCase
 
 	public function testMergeErrorsBothCollections(): void
 	{
-		$first = new ErrorCollection([
-			new ErrorMessage('a', 'dev a'),
-			new ErrorMessage('b', 'dev b'),
+		$first = new IssueCollection([
+			new CustomIssue('a', 'dev a'),
+			new CustomIssue('b', 'dev b'),
 		]);
-		$second = new ErrorCollection([
-			new ErrorMessage('c', 'dev c'),
-			new ErrorMessage('d', 'dev d'),
+		$second = new IssueCollection([
+			new CustomIssue('c', 'dev c'),
+			new CustomIssue('d', 'dev d'),
 		]);
 
-		$result = TypeSchemaHelper::mergeErrors($first, $second);
-		$reports = $result->getReports();
+		$reports = ErrorReport::fromIssues(TypeSchemaHelper::mergeErrors($first, $second));
 
 		self::assertCount(4, $reports);
-		self::assertSame('a', (string) $reports[0]->message);
-		self::assertSame('b', (string) $reports[1]->message);
-		self::assertSame('c', (string) $reports[2]->message);
 		self::assertSame('d', (string) $reports[3]->message);
+		self::assertSame('dev d', (string) $reports[3]->messageForDeveloper);
 	}
 
-	public function testMergeErrorsWithErrorInvalidType(): void
+	public function testMergeErrorsPassesPathToIssues(): void
 	{
-		$definition = new TypeDefinition(new IdentifierTypeNode('string'));
-		$first = new ErrorInvalidType(
-			$definition,
-			fn (?string $type): string => sprintf('Expected %s.', $type ?? 'unknown'),
-			42,
-		);
-		$second = new ErrorMessage('other error', 'dev other');
-
-		$result = TypeSchemaHelper::mergeErrors($first, $second);
-		$reports = $result->getReports();
-
-		self::assertCount(2, $reports);
-		self::assertSame('Expected string.', (string) $reports[0]->message);
-		self::assertSame('other error', (string) $reports[1]->message);
-	}
-
-	public function testMergeErrorsPassesPathToReports(): void
-	{
-		$first = new ErrorMessage('msg1', 'dev1');
-		$second = new ErrorMessage('msg2', 'dev2');
-
-		$result = TypeSchemaHelper::mergeErrors($first, $second);
+		$result = TypeSchemaHelper::mergeErrors(new CustomIssue('msg1'), new CustomIssue('msg2'));
 		$path = [new Path('root')];
-		$reports = $result->getReports($path);
 
-		self::assertCount(2, $reports);
-		self::assertSame($path, $reports[0]->path);
-		self::assertSame($path, $reports[1]->path);
+		$issues = $result->getIssues($path);
+
+		self::assertSame($path, $issues[0]->path);
+		self::assertSame($path, $issues[1]->path);
 	}
 
-	public function testMergeErrorsPassesConfigToReports(): void
+	public function testMergeErrorsReportsRespectConfig(): void
 	{
 		$definition = new TypeDefinition(new IdentifierTypeNode('string'));
-		$first = new ErrorInvalidType(
-			$definition,
-			fn (?string $type): string => sprintf('Expected %s.', $type ?? 'unknown'),
-			42,
-		);
-		$second = new ErrorInvalidType(
-			$definition,
-			fn (?string $type): string => sprintf('Want %s.', $type ?? 'unknown'),
-			'foo',
+		$result = TypeSchemaHelper::mergeErrors(
+			new InvalidType($definition, 42),
+			new InvalidType($definition, 'foo'),
 		);
 
-		$result = TypeSchemaHelper::mergeErrors($first, $second);
-		$config = new ErrorReportConfig(exposeExpectedType: false);
-		$reports = $result->getReports([], $config);
+		$reports = ErrorReport::fromIssues($result, config: new ErrorReportConfig(exposeExpectedType: false));
 
-		self::assertCount(2, $reports);
-		self::assertSame('Expected unknown.', (string) $reports[0]->message);
-		self::assertSame('Want unknown.', (string) $reports[1]->message);
-	}
-
-	public function testMergeErrorsDeveloperMessages(): void
-	{
-		$first = new ErrorMessage('user1', 'developer1');
-		$second = new ErrorMessage('user2', 'developer2');
-
-		$result = TypeSchemaHelper::mergeErrors($first, $second);
-		$reports = $result->getReports();
-
-		self::assertCount(2, $reports);
-		self::assertSame('developer1', (string) $reports[0]->messageForDeveloper);
-		self::assertSame('developer2', (string) $reports[1]->messageForDeveloper);
+		self::assertSame('The provided value is not valid.', (string) $reports[0]->message);
+		self::assertSame('The provided value is not valid.', (string) $reports[1]->message);
 	}
 
 	public function testReindexShapeErrorMessage(): void
@@ -208,16 +133,38 @@ final class TypeSchemaHelperTest extends TestCase
 			'other' => TypeSchema::get()->int(),
 		]));
 
-		$error = $this->getProcessor()->parse([
+		$result = $this->getProcessor()->parse([
 			'bar' => 15,
 			'other' => 123,
 		], $schema);
 
-		self::assertInstanceOf(ErrorElement::class, $error);
+		self::assertInstanceOf(Failure::class, $result);
 		self::assertSame(<<<'ERR'
 ✖ Invalid type int with value 15, expected string.
   → at bar
-ERR, TypeSchemaErrorFormatter::prettyString($error));
+ERR, TypeSchemaErrorFormatter::prettyString($result));
+	}
+
+	public function testReindexShapeKeepsNoticesOfUnmappedKeys(): void
+	{
+		$schema = TypeSchemaHelper::reindexShape([
+			'bar' => 'foo',
+		], TypeSchema::get()->arrayShape([
+			'foo' => TypeSchema::get()->string(),
+		]));
+
+		$result = $this->getProcessor()->parse([
+			'bar' => 'hello',
+			'unknown' => 1,
+		], $schema);
+
+		self::assertInstanceOf(Success::class, $result);
+		self::assertSame(['foo' => 'hello'], $result->value);
+		self::assertNotNull($result->notices);
+		$notices = $result->notices->getIssues();
+		self::assertCount(1, $notices);
+		self::assertInstanceOf(ExtraKey::class, $notices[0]->issue);
+		self::assertSame('unknown', $notices[0]->path[0]->path);
 	}
 
 }

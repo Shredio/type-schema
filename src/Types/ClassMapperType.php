@@ -39,7 +39,7 @@ final readonly class ClassMapperType extends Type implements ClassBoundType
 		}
 
 		if ($context->conversionStrategy->isStrictForObject($this->className)) {
-			return $context->errorElementFactory->invalidType($this->createDefinition($context), $valueToParse);
+			return $this->createInvalidTypeFailure($valueToParse, $context);
 		}
 
 		return $this->mapper->create($this->className, $valueToParse, $context);

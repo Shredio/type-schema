@@ -2,21 +2,29 @@
 
 namespace Shredio\TypeSchema\Exception;
 
-use Shredio\TypeSchema\Error\ErrorCategory;
-use Shredio\TypeSchema\Error\ErrorElement;
-use Shredio\TypeSchema\Error\ErrorReport;
-use Shredio\TypeSchema\Error\TypeSchemaErrorFormatter;
+use Shredio\TypeSchema\Issue\ErrorCategory;
+use Shredio\TypeSchema\Issue\Renderer\EnglishIssueRenderer;
+use Shredio\TypeSchema\Issue\Renderer\IssueRenderer;
+use Shredio\TypeSchema\Issue\Report\ErrorReport;
+use Shredio\TypeSchema\Issue\Report\TypeSchemaErrorFormatter;
+use Shredio\TypeSchema\Result\Failure;
 use Throwable;
 
 final class AssertException extends RuntimeException
 {
 
 	public function __construct(
-		private readonly ErrorElement $errorElement,
+		private readonly Failure $failure,
+		private readonly IssueRenderer $issueRenderer = new EnglishIssueRenderer(),
 		?Throwable $previous = null,
 	)
 	{
 		parent::__construct('Assertion failed.', $previous);
+	}
+
+	public function getFailure(): Failure
+	{
+		return $this->failure;
 	}
 
 	/**
@@ -24,7 +32,7 @@ final class AssertException extends RuntimeException
 	 */
 	public function getErrors(): array
 	{
-		return $this->errorElement->getReports();
+		return $this->failure->getReports($this->issueRenderer);
 	}
 
 	/**
@@ -35,7 +43,7 @@ final class AssertException extends RuntimeException
 	 */
 	public function getCategory(): ErrorCategory
 	{
-		return ErrorCategory::resolve($this->errorElement->getReports());
+		return $this->failure->getCategory();
 	}
 
 	/**
@@ -43,7 +51,7 @@ final class AssertException extends RuntimeException
 	 */
 	public function toPrettyString(string $listStyle = '✖ ', string $pathStyle = '→ '): string
 	{
-		return TypeSchemaErrorFormatter::prettyString($this->errorElement, $listStyle, $pathStyle);
+		return TypeSchemaErrorFormatter::prettyString($this->failure, $listStyle, $pathStyle);
 	}
 
 }

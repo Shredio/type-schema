@@ -4,13 +4,14 @@ namespace Shredio\TypeSchema\Symfony;
 
 use Shredio\TypeSchema\Conversion\ConversionStrategy;
 use Shredio\TypeSchema\Conversion\ConversionStrategyFactory;
+use Shredio\TypeSchema\Issue\Renderer\IssueRenderer;
+use Shredio\TypeSchema\Issue\Renderer\SymfonyIssueRenderer;
 use Shredio\TypeSchema\Mapper\BackedEnumClassMapper;
 use Shredio\TypeSchema\Mapper\ClassMapper;
 use Shredio\TypeSchema\Mapper\ClassMapperProvider;
 use Shredio\TypeSchema\Mapper\DateTimeClassMapper;
 use Shredio\TypeSchema\Mapper\RegistryClassMapperProvider;
 use Shredio\TypeSchema\TypeSchemaProcessor;
-use Shredio\TypeSchema\Validation\SymfonyErrorElementFactory;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ServicesConfigurator;
@@ -36,8 +37,9 @@ final class TypeSchemaBundle extends AbstractBundle
 			->factory([ConversionStrategyFactory::class, 'strict'])
 			->alias(ConversionStrategy::class, $this->prefix('conversion_strategy'));
 
-		$services->set($this->prefix('error_element_factory'), SymfonyErrorElementFactory::class)
-			->arg('$translator', service('translator'));
+		$services->set($this->prefix('issue_renderer'), SymfonyIssueRenderer::class)
+			->arg('$translator', service('translator'))
+			->alias(IssueRenderer::class, $this->prefix('issue_renderer'));
 
 		$services->set(self::ClassMapperProviderServiceName, RegistryClassMapperProvider::class)
 			->arg('$mappers', tagged_iterator(self::ClassMapperTag))
@@ -51,11 +53,11 @@ final class TypeSchemaBundle extends AbstractBundle
 
 		$services->set($this->prefix('processor'), TypeSchemaProcessor::class)
 			->arg('$conversionStrategy', service($this->prefix('conversion_strategy')))
-			->arg('$errorElementFactory', service($this->prefix('error_element_factory')))
 			->arg('$classMapperProvider', service(self::ClassMapperProviderServiceName))
 			->arg('$defaultOptions', [
 				SymfonySchemaValidator::class => service($this->prefix('default_option.symfony_validator')),
 			])
+			->arg('$issueRenderer', service($this->prefix('issue_renderer')))
 			->alias(TypeSchemaProcessor::class, $this->prefix('processor'));
 
 		$builder->registerForAutoconfiguration(ClassMapper::class)

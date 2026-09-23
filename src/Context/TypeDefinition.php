@@ -3,7 +3,7 @@
 namespace Shredio\TypeSchema\Context;
 
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
-use Shredio\TypeSchema\TypeSystem\TypeNodeHelper;
+use Shredio\TypeSchema\Validation\TypeSystem\TypeNodeHelper;
 
 final class TypeDefinition
 {

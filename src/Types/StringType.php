@@ -5,7 +5,7 @@ namespace Shredio\TypeSchema\Types;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
-use Shredio\TypeSchema\Error\ErrorElement;
+use Shredio\TypeSchema\Result\Failure;
 
 /**
  * @extends Type<string>
@@ -13,11 +13,11 @@ use Shredio\TypeSchema\Error\ErrorElement;
 final readonly class StringType extends Type
 {
 
-	public function parse(mixed $valueToParse, TypeContext $context): string|ErrorElement
+	public function parse(mixed $valueToParse, TypeContext $context): string|Failure
 	{
 		$value = $context->conversionStrategy->string($valueToParse);
 		if ($value === null) {
-			return $context->errorElementFactory->invalidType($this->createDefinition($context), $valueToParse);
+			return $this->createInvalidTypeFailure($valueToParse, $context);
 		}
 
 		return $value;

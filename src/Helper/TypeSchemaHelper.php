@@ -7,10 +7,10 @@ use ReflectionNamedType;
 use ReflectionType;
 use ReflectionUnionType;
 use Shredio\TypeSchema\Context\TypeContext;
-use Shredio\TypeSchema\Error\ErrorCollection;
-use Shredio\TypeSchema\Error\ErrorElement;
-use Shredio\TypeSchema\Error\ErrorPath;
 use Shredio\TypeSchema\Exception\UnsupportedTypeException;
+use Shredio\TypeSchema\Issue\IssueCollection;
+use Shredio\TypeSchema\Issue\IssueNode;
+use Shredio\TypeSchema\Issue\IssuePath;
 use Shredio\TypeSchema\Types\Type;
 use Shredio\TypeSchema\TypeSchema;
 
@@ -27,9 +27,9 @@ final readonly class TypeSchemaHelper
 		'string' => true,
 	];
 
-	public static function mergeErrors(ErrorElement $firstElement, ErrorElement $secondElement): ErrorCollection
+	public static function mergeErrors(IssueNode $firstNode, IssueNode $secondNode): IssueCollection
 	{
-		return new ErrorCollection([$firstElement, $secondElement]);
+		return new IssueCollection([$firstNode, $secondNode]);
 	}
 
 	/**
@@ -152,8 +152,8 @@ final readonly class TypeSchemaHelper
 				return $value;
 			},
 			$type,
-			static function (ErrorElement $error) use ($mapping): ErrorElement {
-				return self::reindexShapeFromErrors($mapping, $error);
+			static function (IssueNode $issues) use ($mapping): IssueNode {
+				return self::reindexShapeFromIssues($mapping, $issues);
 			},
 		);
 	}
@@ -161,40 +161,40 @@ final readonly class TypeSchemaHelper
 	/**
 	 * @param array<array-key, array-key> $mapping oldKey => newKey
 	 */
-	private static function reindexShapeFromErrors(array $mapping, ErrorElement $error): ErrorElement
+	private static function reindexShapeFromIssues(array $mapping, IssueNode $issues): IssueNode
 	{
-		if ($error instanceof ErrorCollection) {
+		if ($issues instanceof IssueCollection) {
 			$reversedMapping = array_flip($mapping);
-			$newCollection = [];
-			foreach ($error->collection as $childError) {
-				if ($childError instanceof ErrorPath) {
-					$newCollection[] = self::reindexPath($childError, $reversedMapping);
-				} else{
-					$newCollection[] = $childError;
+			$newNodes = [];
+			foreach ($issues->nodes as $childNode) {
+				if ($childNode instanceof IssuePath) {
+					$newNodes[] = self::reindexPath($childNode, $reversedMapping);
+				} else {
+					$newNodes[] = $childNode;
 				}
 			}
 
-			return new ErrorCollection($newCollection);
+			return new IssueCollection($newNodes);
 		}
 
-		if ($error instanceof ErrorPath) {
+		if ($issues instanceof IssuePath) {
 			$reversedMapping = array_flip($mapping);
-			return self::reindexPath($error, $reversedMapping);
+			return self::reindexPath($issues, $reversedMapping);
 		}
 
-		return $error;
+		return $issues;
 	}
 
 	/**
 	 * @param array<array-key, array-key> $reversedMapping newKey => oldKey
 	 */
-	private static function reindexPath(ErrorPath $error, array $reversedMapping): ErrorPath
+	private static function reindexPath(IssuePath $issuePath, array $reversedMapping): IssuePath
 	{
-		if (isset($reversedMapping[$error->path->path])) {
-			return $error->withPath($error->path->withPath($reversedMapping[$error->path->path]));
+		if (isset($reversedMapping[$issuePath->path->path])) {
+			return $issuePath->withPath($issuePath->path->withPath($reversedMapping[$issuePath->path->path]));
 		}
 
-		return $error;
+		return $issuePath;
 	}
 
 }

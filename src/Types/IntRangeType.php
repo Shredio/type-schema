@@ -6,8 +6,9 @@ use PHPStan\PhpDocParser\Ast\Type\GenericTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
-use Shredio\TypeSchema\Error\ErrorElement;
 use Shredio\TypeSchema\Helper\NumberInclusiveRange;
+use Shredio\TypeSchema\Issue\NumberOutOfRange;
+use Shredio\TypeSchema\Result\Failure;
 
 /**
  * @extends DecorateType<int, int>
@@ -22,14 +23,14 @@ final readonly class IntRangeType extends DecorateType
 		$this->range = NumberInclusiveRange::fromInts($min, $max);
 	}
 
-	protected function decorate(mixed $value, TypeContext $context): ErrorElement|int
+	protected function decorate(mixed $value, TypeContext $context): Failure|int
 	{
 		$decided = $this->range->decide($value);
 		if ($decided->isOk()) {
 			return $value;
 		}
 
-		return $context->errorElementFactory->numberRange($this->createDefinition($context), $value, $this->range, $decided);
+		return new Failure(new NumberOutOfRange($value, $this->range, $decided));
 	}
 
 	protected function getInnerType(): IntType

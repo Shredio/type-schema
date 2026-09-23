@@ -3,8 +3,10 @@
 namespace Shredio\TypeSchema\Symfony;
 
 use Shredio\TypeSchema\Context\TypeContext;
-use Shredio\TypeSchema\Error\ErrorElement;
 use Shredio\TypeSchema\Exception\LogicException;
+use Shredio\TypeSchema\Issue\CustomIssue;
+use Shredio\TypeSchema\Issue\IssueCollection;
+use Shredio\TypeSchema\Issue\IssueNode;
 
 final readonly class SymfonyPropertyConstraints
 {
@@ -20,7 +22,7 @@ final readonly class SymfonyPropertyConstraints
 	{
 	}
 
-	public function __invoke(mixed $value, TypeContext $context): ?ErrorElement
+	public function __invoke(mixed $value, TypeContext $context): ?IssueNode
 	{
 		$option = $context->getOption(SymfonySchemaValidator::class);
 		if ($option === null) {
@@ -30,14 +32,14 @@ final readonly class SymfonyPropertyConstraints
 		$violationList = $option->validator->validatePropertyValue($this->className, $this->propertyName, $value);
 		$errors = [];
 		foreach ($violationList as $violation) {
-			$errors[] = $context->errorElementFactory->createError($violation->getMessage());
+			$errors[] = new CustomIssue($violation->getMessage());
 		}
 
 		if ($errors === []) {
 			return null;
 		}
 
-		return $context->errorElementFactory->createCollection($errors);
+		return IssueCollection::create($errors);
 	}
 
 }

@@ -4,12 +4,12 @@ namespace Tests;
 
 use Shredio\TypeSchema\Config\TypeConfig;
 use Shredio\TypeSchema\Conversion\ConversionStrategyFactory;
-use Shredio\TypeSchema\Error\ErrorElement;
+use Shredio\TypeSchema\Issue\Renderer\SymfonyIssueRenderer;
 use Shredio\TypeSchema\Mapper\RegistryClassMapperProvider;
+use Shredio\TypeSchema\Result\Success;
 use Shredio\TypeSchema\Types\Type;
 use Shredio\TypeSchema\TypeSchema;
 use Shredio\TypeSchema\TypeSchemaProcessor;
-use Shredio\TypeSchema\Validation\SymfonyErrorElementFactory;
 use Symfony\Component\Translation\IdentityTranslator;
 use Tests\Common\TestConversionStrategy;
 
@@ -20,8 +20,8 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
 	{
 		return new TypeSchemaProcessor(
 			new TestConversionStrategy(),
-			new SymfonyErrorElementFactory(new IdentityTranslator()),
 			new RegistryClassMapperProvider(RegistryClassMapperProvider::createDefaultClassMappers()),
+			issueRenderer: new SymfonyIssueRenderer(new IdentityTranslator()),
 		);
 	}
 
@@ -33,9 +33,10 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
 	protected function validStrictParse(Type $type, mixed $value): mixed
 	{
 		$ret = $this->getProcessor()->parse($value, $type);
-		$this->assertNotInstanceOf(ErrorElement::class, $ret);
+		$this->assertInstanceOf(Success::class, $ret);
+		$this->assertFalse($ret->hasNotices());
 
-		return $ret;
+		return $ret->value;
 	}
 
 	/**
@@ -46,9 +47,10 @@ abstract class TestCase extends \PHPUnit\Framework\TestCase
 	protected function validLenientParse(Type $type, mixed $value): mixed
 	{
 		$ret = $this->getProcessor()->parse($value, $type, new TypeConfig(ConversionStrategyFactory::lenient()));
-		$this->assertNotInstanceOf(ErrorElement::class, $ret);
+		$this->assertInstanceOf(Success::class, $ret);
+		$this->assertFalse($ret->hasNotices());
 
-		return $ret;
+		return $ret->value;
 	}
 
 	/**

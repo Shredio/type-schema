@@ -2,10 +2,14 @@
 
 namespace Tests\Unit\Types;
 
-use Shredio\TypeSchema\Enum\ExtraKeysBehavior;
-use Shredio\TypeSchema\Error\ErrorElement;
+use Shredio\TypeSchema\Issue\ExtraKey;
+use Shredio\TypeSchema\Issue\InvalidType;
+use Shredio\TypeSchema\Result\Failure;
+use Shredio\TypeSchema\Result\Success;
+use Shredio\TypeSchema\TypeSchema;
 use Shredio\TypeSchema\Types\ArrayShapeType;
 use Shredio\TypeSchema\Types\IntType;
+use Shredio\TypeSchema\Types\MixedType;
 use Shredio\TypeSchema\Types\OptionalType;
 use Shredio\TypeSchema\Types\StringType;
 use stdClass;
@@ -60,18 +64,18 @@ final class ArrayShapeTypeTest extends TypeTestCase
 		]), ['array', 'string', 'int']);
 		yield 'integer keyed shape' => [0 => 'value', 1 => 100];
 
-		// Shape with ExtraKeysBehavior::Accept
+		// Open shape with mixed rest
 		yield $this->typeToTest(new ArrayShapeType([
 			'name' => new StringType(),
-		], ExtraKeysBehavior::Accept), ['array', 'string']);
-		yield 'shape accepting extra keys' => ['name' => 'John', 'extra' => 'allowed'];
-		yield 'shape accepting multiple extra keys' => ['name' => 'John', 'extra1' => 'a', 'extra2' => 'b'];
+		], new MixedType()), ['array', 'string']);
+		yield 'open shape with extra key' => ['name' => 'John', 'extra' => 'allowed'];
+		yield 'open shape with multiple extra keys' => ['name' => 'John', 'extra1' => 'a', 'extra2' => 'b'];
 
-		// Shape with ExtraKeysBehavior::Ignore
+		// Open shape with typed rest
 		yield $this->typeToTest(new ArrayShapeType([
 			'name' => new StringType(),
-		], ExtraKeysBehavior::Ignore), ['array', 'string']);
-		yield 'shape ignoring extra keys' => ['name' => 'John', 'ignored' => 'value'];
+		], new IntType()), ['array', 'string', 'int']);
+		yield 'open shape with typed extra key' => ['name' => 'John', 'extra' => 1];
 
 		// Complex mixed shape without optional metadata
 		yield $this->typeToTest(new ArrayShapeType([
@@ -100,8 +104,8 @@ final class ArrayShapeTypeTest extends TypeTestCase
 		yield 'wrong type for age' => ['name' => 'John', 'age' => 'thirty'];
 		yield 'null for required field' => ['name' => null, 'age' => 30];
 
-		// Extra keys with Reject behavior (default)
-		yield 'extra key with reject behavior' => ['name' => 'John', 'age' => 30, 'extra' => 'rejected'];
+		// Extra keys in a closed shape produce notices, matches() treats them as errors
+		yield 'extra key in closed shape' => ['name' => 'John', 'age' => 30, 'extra' => 'rejected'];
 		yield 'multiple extra keys' => ['name' => 'John', 'age' => 30, 'a' => 1, 'b' => 2];
 
 		// Non-array values
@@ -133,54 +137,100 @@ final class ArrayShapeTypeTest extends TypeTestCase
 		yield 'nested shape with wrong type' => ['user' => 'not-an-array'];
 		yield 'nested shape with missing field' => ['user' => []];
 		yield 'nested shape with extra field rejected' => ['user' => ['name' => 'John', 'extra' => 'value']];
+
+		// Open shape with typed rest
+		yield $this->typeToTest(new ArrayShapeType([
+			'name' => new StringType(),
+		], new IntType()));
+		yield 'open shape with wrongly typed extra key' => ['name' => 'John', 'extra' => 'not-int'];
 	}
 
-	public function testIgnoringExtraKeys(): void
+	public function testExtraKeysAreRemovedAndReportedAsNotices(): void
 	{
 		$type = new ArrayShapeType([
 			'name' => new StringType(),
-		], ExtraKeysBehavior::Ignore);
+		]);
 
-		$processor = $this->getProcessor();
+		$result = $this->getProcessor()->parse(['name' => 'John', 'extra' => 'should be removed'], $type);
 
-		$value = ['name' => 'John', 'extra' => 'should be ignored'];
-		$ret = $processor->parse($value, $type);
-
-		$this->assertIsArray($ret);
-		$this->assertArrayHasKey('name', $ret);
-		$this->assertArrayNotHasKey('extra', $ret);
+		$this->assertInstanceOf(Success::class, $result);
+		$this->assertSame(['name' => 'John'], $result->value);
+		$this->assertNotNull($result->notices);
+		$notices = $result->notices->getIssues();
+		$this->assertCount(1, $notices);
+		$this->assertInstanceOf(ExtraKey::class, $notices[0]->issue);
+		$this->assertSame('extra', $notices[0]->path[0]->path);
 	}
 
-	public function testAllowingExtraKeys(): void
+	public function testOpenShapeKeepsExtraKeys(): void
 	{
 		$type = new ArrayShapeType([
 			'name' => new StringType(),
-		], ExtraKeysBehavior::Accept);
+		], new MixedType());
 
-		$processor = $this->getProcessor();
+		$result = $this->getProcessor()->parse(['name' => 'John', 'extra' => ['nested' => true]], $type);
 
-		$value = ['name' => 'John', 'extra' => 'should be accepted'];
-		$ret = $processor->parse($value, $type);
-
-		$this->assertIsArray($ret);
-		$this->assertArrayHasKey('name', $ret);
-		$this->assertArrayHasKey('extra', $ret);
+		$this->assertInstanceOf(Success::class, $result);
+		$this->assertSame(['name' => 'John', 'extra' => ['nested' => true]], $result->value);
+		$this->assertFalse($result->hasNotices());
 	}
 
-	public function testWithExtraKeysBehavior(): void
+	public function testOpenShapeParsesExtraValuesWithRestType(): void
+	{
+		$t = TypeSchema::get();
+		$type = $t->arrayShape(['name' => $t->string()], rest: $t->int());
+
+		$result = $this->getProcessor()->parse(['name' => 'John', 'extra' => 'abc'], $type);
+
+		$this->assertInstanceOf(Failure::class, $result);
+		$issues = $result->errors->getIssues();
+		$this->assertCount(1, $issues);
+		$this->assertInstanceOf(InvalidType::class, $issues[0]->issue);
+		$this->assertSame('extra', $issues[0]->path[0]->path);
+	}
+
+	public function testOptionalKeyIsNotExtraKey(): void
 	{
 		$type = new ArrayShapeType([
 			'name' => new StringType(),
-		], ExtraKeysBehavior::Accept);
+			'nickname' => new OptionalType(new StringType()),
+		]);
 
-		$processor = $this->getProcessor();
+		$result = $this->getProcessor()->parse(['name' => 'John', 'nickname' => 'Johnny'], $type);
 
-		$value = ['name' => 'John', 'extra' => 'should be ignored'];
-		$ret = $processor->parse($value, $type->withExtraKeysBehavior(ExtraKeysBehavior::Ignore));
+		$this->assertInstanceOf(Success::class, $result);
+		$this->assertFalse($result->hasNotices());
+	}
 
-		$this->assertIsArray($ret);
-		$this->assertArrayHasKey('name', $ret);
-		$this->assertArrayNotHasKey('extra', $ret);
+	public function testNoticesAreKeptAlongsideErrors(): void
+	{
+		$type = new ArrayShapeType([
+			'name' => new StringType(),
+			'age' => new IntType(),
+		]);
+
+		$result = $this->getProcessor()->parse(['extra' => 1, 'name' => 'John', 'age' => 'x'], $type, collectErrors: true);
+
+		$this->assertInstanceOf(Failure::class, $result);
+		$this->assertSame(['age'], $result->getReports()[0]->toArrayPath());
+		$notices = $result->getNoticeReports();
+		$this->assertCount(1, $notices);
+		$this->assertSame(['extra'], $notices[0]->toArrayPath());
+	}
+
+	public function testNoticesUseIdentifiedPath(): void
+	{
+		$t = TypeSchema::get();
+		$type = $t->list($t->arrayShape(['id' => $t->int()], identifier: 'id'));
+
+		$result = $this->getProcessor()->parse([['id' => 5, 'extra' => true]], $type);
+
+		$this->assertInstanceOf(Success::class, $result);
+		$notices = $result->getNoticeReports();
+		$this->assertCount(1, $notices);
+		$this->assertSame('[0].extra', $notices[0]->toDebugPathString());
+		$this->assertNull($notices[0]->toIdentifiedPath()); // list index is not identified
+		$this->assertSame(5, $notices[0]->path[1]->identified?->value);
 	}
 
 }

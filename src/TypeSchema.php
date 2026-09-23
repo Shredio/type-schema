@@ -3,8 +3,7 @@
 namespace Shredio\TypeSchema;
 
 use Shredio\TypeSchema\Context\TypeContext;
-use Shredio\TypeSchema\Enum\ExtraKeysBehavior;
-use Shredio\TypeSchema\Error\ErrorElement;
+use Shredio\TypeSchema\Issue\IssueNode;
 use Shredio\TypeSchema\Types\Type;
 use Shredio\TypeSchema\Types\UnionType;
 
@@ -97,25 +96,23 @@ class TypeSchema
 	}
 
 	/**
+	 * Keys not defined in the schema are removed from the result and reported as ExtraKey notices.
+	 * When $rest is given, the shape is open: such keys are parsed with $rest and kept.
+	 *
 	 * @template TKey of array-key
 	 * @template TValue
 	 * @param array<TKey, Type<TValue>> $schema
+	 * @param Type<mixed>|null $rest
 	 * @param non-empty-string|null $identifier
 	 * @return Type<array<TKey, TValue>>
 	 */
 	public function arrayShape(
 		array $schema,
-		bool|ExtraKeysBehavior|null $extraItems = false, // boolean is deprecated
+		?Type $rest = null,
 		?string $identifier = null,
 	): Type
 	{
-		if ($extraItems === true) {
-			$extraItems = ExtraKeysBehavior::Accept;
-		} elseif ($extraItems === false) {
-			$extraItems = null;
-		}
-
-		return new Types\ArrayShapeType($schema, $extraItems, $identifier);
+		return new Types\ArrayShapeType($schema, $rest, $identifier);
 	}
 
 	/**
@@ -155,12 +152,12 @@ class TypeSchema
 	 * @template T
 	 * @param callable(mixed $valueToParse, TypeContext $context): mixed $fn
 	 * @param Type<T> $type
-	 * @param (callable(ErrorElement $error): ErrorElement)|null $onError
+	 * @param (callable(IssueNode $issues): IssueNode)|null $mapIssues applied to both errors and notices
 	 * @return Type<T>
 	 */
-	public function before(callable $fn, Type $type, ?callable $onError = null): Type
+	public function before(callable $fn, Type $type, ?callable $mapIssues = null): Type
 	{
-		return new Types\BeforeType($fn, $type, $onError);
+		return new Types\BeforeType($fn, $type, $mapIssues);
 	}
 
 	/**

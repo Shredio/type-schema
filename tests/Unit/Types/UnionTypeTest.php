@@ -2,10 +2,16 @@
 
 namespace Tests\Unit\Types;
 
-use Shredio\TypeSchema\Types\UnionType;
-use Shredio\TypeSchema\Types\StringType;
-use Shredio\TypeSchema\Types\IntType;
+use Shredio\TypeSchema\Issue\ErrorCategory;
+use Shredio\TypeSchema\Issue\InvalidType;
+use Shredio\TypeSchema\Issue\NumberOutOfRange;
+use Shredio\TypeSchema\Result\Failure;
+use Shredio\TypeSchema\Result\Success;
 use Shredio\TypeSchema\Types\BoolType;
+use Shredio\TypeSchema\Types\IntType;
+use Shredio\TypeSchema\Types\StringType;
+use Shredio\TypeSchema\Types\UnionType;
+use Shredio\TypeSchema\TypeSchema;
 use Tests\TypeTestCase;
 
 final class UnionTypeTest extends TypeTestCase
@@ -67,6 +73,76 @@ final class UnionTypeTest extends TypeTestCase
 		$this->assertTrue($this->checkType($unionType, 123));
 		$this->assertFalse($this->checkType($unionType, 45.67));
 		$this->assertFalse($this->checkType($unionType, true));
+	}
+
+	public function testPrefersMemberWithoutNotices(): void
+	{
+		$t = TypeSchema::get();
+		$type = $t->union([
+			$t->arrayShape(['a' => $t->int()]),
+			$t->arrayShape(['a' => $t->int(), 'b' => $t->int()]),
+		]);
+
+		$result = $this->getProcessor()->parse(['a' => 1, 'b' => 2], $type);
+
+		$this->assertInstanceOf(Success::class, $result);
+		$this->assertSame(['a' => 1, 'b' => 2], $result->value);
+		$this->assertFalse($result->hasNotices());
+	}
+
+	public function testFallsBackToFirstMemberWithNotices(): void
+	{
+		$t = TypeSchema::get();
+		$type = $t->union([
+			$t->arrayShape(['a' => $t->int()]),
+			$t->arrayShape(['a' => $t->int(), 'b' => $t->int()]),
+		]);
+
+		$result = $this->getProcessor()->parse(['a' => 1, 'c' => 3], $type);
+
+		$this->assertInstanceOf(Success::class, $result);
+		$this->assertSame(['a' => 1], $result->value);
+		$this->assertSame([['c']], array_map(static fn ($report): array => $report->toArrayPath(), $result->getNoticeReports()));
+	}
+
+	public function testNoticesOfFailedMembersAreDiscarded(): void
+	{
+		$t = TypeSchema::get();
+		$type = $t->union([
+			$t->arrayShape(['a' => $t->string()]),
+			$t->arrayShape(['a' => $t->int(), 'b' => $t->int()]),
+		]);
+
+		$result = $this->getProcessor()->parse(['a' => 1, 'b' => 2], $type);
+
+		$this->assertInstanceOf(Success::class, $result);
+		$this->assertFalse($result->hasNotices());
+	}
+
+	public function testReturnsValidationFailureOfMatchingMember(): void
+	{
+		$t = TypeSchema::get();
+		$type = $t->union([$t->intRange(1, 10), $t->string()]);
+
+		$result = $this->getProcessor()->parse(20, $type);
+
+		$this->assertInstanceOf(Failure::class, $result);
+		$this->assertSame(ErrorCategory::Validation, $result->getCategory());
+		$this->assertInstanceOf(NumberOutOfRange::class, $result->getReports()[0]->issue);
+	}
+
+	public function testReturnsInvalidTypeWhenNoMemberMatches(): void
+	{
+		$t = TypeSchema::get();
+		$type = $t->union([$t->intRange(1, 10), $t->string()]);
+
+		$result = $this->getProcessor()->parse(true, $type);
+
+		$this->assertInstanceOf(Failure::class, $result);
+		$this->assertSame(ErrorCategory::Structural, $result->getCategory());
+		$issue = $result->getReports()[0]->issue;
+		$this->assertInstanceOf(InvalidType::class, $issue);
+		$this->assertSame('(int<1, 10> | string)', $issue->definition->getStringType());
 	}
 
 	private function checkType(UnionType $type, mixed $value): bool

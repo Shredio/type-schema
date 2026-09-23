@@ -3,7 +3,6 @@
 namespace Shredio\TypeSchema\Config;
 
 use Shredio\TypeSchema\Conversion\ConversionStrategy;
-use Shredio\TypeSchema\Enum\ExtraKeysBehavior;
 use Shredio\TypeSchema\Mapper\ClassMapperProvider;
 
 readonly class TypeConfig
@@ -17,7 +16,6 @@ readonly class TypeConfig
 		public ?ClassMapperProvider $classMapperProvider = null,
 		public ?TypeHierarchyConfig $hierarchyConfig = null,
 		public array $options = [],
-		public ?ExtraKeysBehavior $defaultExtraKeysBehavior = null,
 	)
 	{
 	}
@@ -35,17 +33,6 @@ readonly class TypeConfig
 		return $return;
 	}
 
-	public function withDefaultExtraKeysBehavior(?ExtraKeysBehavior $defaultExtraKeysBehavior): TypeConfig
-	{
-		return new self(
-			$this->conversionStrategy,
-			$this->classMapperProvider,
-			$this->hierarchyConfig,
-			$this->options,
-			$defaultExtraKeysBehavior,
-		);
-	}
-
 	public function withConversionStrategy(?ConversionStrategy $conversionStrategy): TypeConfig
 	{
 		return new self(
@@ -53,7 +40,6 @@ readonly class TypeConfig
 			$this->classMapperProvider,
 			$this->hierarchyConfig,
 			$this->options,
-			$this->defaultExtraKeysBehavior,
 		);
 	}
 
@@ -64,7 +50,6 @@ readonly class TypeConfig
 			$objectMapperProvider,
 			$this->hierarchyConfig,
 			$this->options,
-			$this->defaultExtraKeysBehavior,
 		);
 	}
 
@@ -78,7 +63,6 @@ readonly class TypeConfig
 			$this->classMapperProvider,
 			$this->hierarchyConfig,
 			$options,
-			$this->defaultExtraKeysBehavior,
 		);
 	}
 
@@ -92,7 +76,6 @@ readonly class TypeConfig
 			$this->classMapperProvider,
 			TypeHierarchyConfig::fromArray($values),
 			$this->options,
-			$this->defaultExtraKeysBehavior,
 		);
 	}
 

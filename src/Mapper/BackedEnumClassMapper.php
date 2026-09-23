@@ -5,9 +5,11 @@ namespace Shredio\TypeSchema\Mapper;
 use BackedEnum;
 use ReflectionEnum;
 use Shredio\TypeSchema\Context\TypeContext;
-use Shredio\TypeSchema\Error\ErrorElement;
 use Shredio\TypeSchema\Exception\LogicException;
 use Shredio\TypeSchema\Helper\EnumHelper;
+use Shredio\TypeSchema\Issue\InvalidType;
+use Shredio\TypeSchema\Issue\NotAllowedValue;
+use Shredio\TypeSchema\Result\Failure;
 
 /**
  * @template T of BackedEnum
@@ -21,7 +23,7 @@ final readonly class BackedEnumClassMapper extends ClassMapper
 		return is_subclass_of($className, BackedEnum::class);
 	}
 
-	public function create(string $className, mixed $valueToParse, TypeContext $context): BackedEnum|ErrorElement
+	public function create(string $className, mixed $valueToParse, TypeContext $context): BackedEnum|Failure
 	{
 		$backingValueType = EnumHelper::getBackingValueType($className);
 		if ($backingValueType === EnumHelper::UnknownType) {
@@ -32,21 +34,21 @@ final readonly class BackedEnumClassMapper extends ClassMapper
 			}
 
 			$def = $this->createNamedDefinition($backingType);
-			return $context->errorElementFactory->invalidType($def, $valueToParse);
+			return new Failure(new InvalidType($def, $valueToParse));
 		}
 
 		if ($backingValueType === EnumHelper::StringType) {
 			$value = $context->conversionStrategy->string($valueToParse);
 			if ($value === null) {
-				return $context->errorElementFactory->invalidType($this->createNamedDefinition('string'), $valueToParse);
+				return new Failure(new InvalidType($this->createNamedDefinition('string'), $valueToParse));
 			}
 
 			$backedEnum = $className::tryFrom($value);
 			if ($backedEnum === null) {
-				return $context->errorElementFactory->valueNotInAllowedValues($this->createNamedDefinition('string'), $value, array_map(
+				return new Failure(new NotAllowedValue($value, array_map(
 					fn (BackedEnum $case): int|string => $case->value,
 					$className::cases(),
-				));
+				)));
 			}
 
 			return $backedEnum;
@@ -55,15 +57,15 @@ final readonly class BackedEnumClassMapper extends ClassMapper
 		if ($backingValueType === EnumHelper::IntType) {
 			$value = $context->conversionStrategy->int($valueToParse);
 			if ($value === null) {
-				return $context->errorElementFactory->invalidType($this->createNamedDefinition('int'), $valueToParse);
+				return new Failure(new InvalidType($this->createNamedDefinition('int'), $valueToParse));
 			}
 
 			$backedEnum = $className::tryFrom($value);
 			if ($backedEnum === null) {
-				return $context->errorElementFactory->valueNotInAllowedValues($this->createNamedDefinition('int'), $value, array_map(
+				return new Failure(new NotAllowedValue($value, array_map(
 					fn (BackedEnum $case): int|string => $case->value,
 					$className::cases(),
-				));
+				)));
 			}
 
 			return $backedEnum;

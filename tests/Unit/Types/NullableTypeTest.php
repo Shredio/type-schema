@@ -2,6 +2,9 @@
 
 namespace Tests\Unit\Types;
 
+use Shredio\TypeSchema\Issue\InvalidType;
+use Shredio\TypeSchema\Result\Failure;
+use Shredio\TypeSchema\Types\IntType;
 use Shredio\TypeSchema\Types\NonEmptyStringType;
 use Shredio\TypeSchema\Types\NullableType;
 use Shredio\TypeSchema\Types\StringType;
@@ -69,6 +72,17 @@ final class NullableTypeTest extends TypeTestCase
 		$type = new NullableType(new NonEmptyStringType(), ['']);
 
 		$this->assertNull($this->validStrictParse($type, ''));
+	}
+
+	public function testInvalidTypeReportsNullableDefinition(): void
+	{
+		$result = $this->getProcessor()->parse('abc', new NullableType(new IntType()));
+
+		$this->assertInstanceOf(Failure::class, $result);
+		$issue = $result->getReports()[0]->issue;
+		$this->assertInstanceOf(InvalidType::class, $issue);
+		$this->assertSame('?int', $issue->definition->getStringType());
+		$this->assertSame('Invalid type string with value "abc", expected ?int.', $issue->getMessageForDeveloper());
 	}
 
 }

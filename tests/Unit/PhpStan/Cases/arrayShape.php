@@ -59,3 +59,26 @@ assertType('Shredio\TypeSchema\Types\Type<array{int: int, bool: bool, nullable: 
 assertType('array{int: int, bool: bool, nullable: int|null}|null', TypeSchemaProcessor::createDefault()->process([], $schema));
 
 assertType('array{int: int, bool: bool, nullable: int|null}|null', TypeSchemaProcessor::createDefault()->process([], TypeSchemaHelper::reindexShape([], $schema)));
+
+// open shape: extra keys are kept and typed by the rest type
+$schema = $s->arrayShape([
+	'int' => $s->int(),
+	'optional' => $s->optional($s->bool()),
+], rest: $s->string());
+
+assertType("Shredio\\TypeSchema\\Types\\Type<non-empty-array<int|string, bool|int|string>&hasOffsetValue('int', int)>", $schema);
+$value = TypeSchemaProcessor::createDefault()->process([], $schema);
+assertType('int', $value['int']);
+assertType('bool|int|string', $value['other']);
+
+// open shape with positional rest and identifier
+$schema = $s->arrayShape(['id' => $s->int()], $s->mixed(), 'id');
+assertType("Shredio\\TypeSchema\\Types\\Type<non-empty-array<int|string, mixed>&hasOffsetValue('id', int)>", $schema);
+
+// open shape without required keys
+$schema = $s->arrayShape(['optional' => $s->optional($s->int())], rest: $s->int());
+assertType('Shredio\\TypeSchema\\Types\\Type<array<int|string, int>>', $schema);
+
+// closed shape with identifier keeps sealed shape
+$schema = $s->arrayShape(['id' => $s->int()], identifier: 'id');
+assertType('Shredio\\TypeSchema\\Types\\Type<array{id: int}>', $schema);

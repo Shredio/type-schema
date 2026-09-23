@@ -12,11 +12,10 @@ use Shredio\TypeSchema\Conversion\Converter\Bool\BoolConverter;
 use Shredio\TypeSchema\Conversion\Converter\Null\NullConverter;
 use Shredio\TypeSchema\Conversion\Converter\Number\NumberConverter;
 use Shredio\TypeSchema\Conversion\Converter\String\StringConverter;
-use Shredio\TypeSchema\Error\ErrorCollection;
-use Shredio\TypeSchema\Error\ErrorElement;
-use Shredio\TypeSchema\Error\ErrorPath;
-use Shredio\TypeSchema\Error\IdentifiedPath;
-use Shredio\TypeSchema\Error\Path;
+use Shredio\TypeSchema\Issue\InvalidType;
+use Shredio\TypeSchema\Issue\IssueNode;
+use Shredio\TypeSchema\Result\Failure;
+use Shredio\TypeSchema\Result\WithNotices;
 
 /**
  * @template-covariant T
@@ -25,8 +24,10 @@ abstract readonly class Type
 {
 
 	/**
-	 * @param TypeContext $context
-	 * @return T|ErrorElement
+	 * Returns the parsed value, a Failure, or WithNotices when the value was parsed but has notices.
+	 * A clean value is returned as is, without any wrapper.
+	 *
+	 * @return T|Failure|WithNotices<T>
 	 */
 	abstract public function parse(mixed $valueToParse, TypeContext $context): mixed;
 
@@ -73,7 +74,7 @@ abstract readonly class Type
 	}
 
 	/**
-	 * @param callable(T $value, TypeContext $context): ?ErrorElement $callback
+	 * @param callable(T $value, TypeContext $context): ?IssueNode $callback
 	 * @return Type<T>
 	 */
 	final public function validate(callable $callback): Type
@@ -82,28 +83,29 @@ abstract readonly class Type
 	}
 
 	/**
-	 * @phpstan-assert-if-true ErrorElement $value
+	 * @phpstan-assert-if-true Failure $value
 	 */
 	protected function isError(mixed $value): bool
 	{
-		return $value instanceof ErrorElement;
+		return $value instanceof Failure;
+	}
+
+	final protected function createInvalidTypeFailure(mixed $value, TypeContext $context): Failure
+	{
+		return new Failure(new InvalidType($this->createDefinition($context), $value));
 	}
 
 	/**
-	 * @param non-empty-list<ErrorElement> $errors
+	 * When the whole value has an invalid type (not one of its children), reports this type as the expected one
+	 * instead of the type of the inner type this type delegates to.
 	 */
-	final protected function createErrorCollection(array $errors): ErrorElement
+	final protected function withOwnDefinition(Failure $failure, TypeContext $context): Failure
 	{
-		return !isset($errors[1]) ? $errors[0] : new ErrorCollection($errors);
-	}
+		if (!$failure->errors instanceof InvalidType) {
+			return $failure;
+		}
 
-	final protected function createChildError(
-		ErrorElement $error,
-		string|int $path,
-		?IdentifiedPath $identified = null,
-	): ErrorElement
-	{
-		return new ErrorPath($error, new Path($path, $identified));
+		return new Failure($failure->errors->withDefinition($this->createDefinition($context)), $failure->notices);
 	}
 
 }

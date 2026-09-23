@@ -8,7 +8,8 @@ use Shredio\TypeSchema\Conversion\Converter\Bool\LenientBoolConverter;
 use Shredio\TypeSchema\Conversion\Converter\Null\LenientNullConverter;
 use Shredio\TypeSchema\Conversion\Converter\Number\LenientNumberConverter;
 use Shredio\TypeSchema\Conversion\Converter\String\LenientStringConverter;
-use Shredio\TypeSchema\Error\ErrorElement;
+use Shredio\TypeSchema\Result\Failure;
+use Shredio\TypeSchema\Result\Success;
 use Shredio\TypeSchema\TypeSchema;
 use Tests\TestCase;
 
@@ -114,7 +115,7 @@ final class ConversionTypeTest extends TestCase
 		);
 
 		$result = $this->getProcessor()->parse('42', $type);
-		self::assertInstanceOf(ErrorElement::class, $result);
+		self::assertInstanceOf(Failure::class, $result);
 	}
 
 	public function testConversionOverridesGlobalStrategy(): void
@@ -124,8 +125,8 @@ final class ConversionTypeTest extends TestCase
 		);
 
 		$result = $this->getProcessor()->parse(42, $type, new TypeConfig(ConversionStrategyFactory::strict()));
-		self::assertNotInstanceOf(ErrorElement::class, $result);
-		self::assertSame('42', $result);
+		self::assertInstanceOf(Success::class, $result);
+		self::assertSame('42', $result->value);
 	}
 
 	public function testMultipleConversionsAtOnce(): void
@@ -153,8 +154,8 @@ final class ConversionTypeTest extends TestCase
 		$type = TypeSchema::get()->int()->conversion();
 
 		$result = $this->getProcessor()->parse(42, $type);
-		self::assertNotInstanceOf(ErrorElement::class, $result);
-		self::assertSame(42, $result);
+		self::assertInstanceOf(Success::class, $result);
+		self::assertSame(42, $result->value);
 	}
 
 }

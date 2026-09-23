@@ -4,9 +4,7 @@ namespace Shredio\TypeSchema\Context;
 
 use Shredio\TypeSchema\Config\TypeHierarchyConfig;
 use Shredio\TypeSchema\Conversion\ConversionStrategy;
-use Shredio\TypeSchema\Enum\ExtraKeysBehavior;
 use Shredio\TypeSchema\Mapper\ClassMapperProvider;
-use Shredio\TypeSchema\Validation\ErrorElementFactory;
 
 final readonly class TypeContext
 {
@@ -16,12 +14,10 @@ final readonly class TypeContext
 	 */
 	public function __construct(
 		public ConversionStrategy $conversionStrategy,
-		public ErrorElementFactory $errorElementFactory,
 		public ClassMapperProvider $classMapperProvider,
 		public ?TypeHierarchyConfig $hierarchyConfig = null,
 		private array $options = [],
 		public bool $collectErrors = false,
-		public ?ExtraKeysBehavior $defaultExtraKeysBehavior = null,
 	)
 	{
 	}
@@ -30,25 +26,10 @@ final readonly class TypeContext
 	{
 		return new self(
 			$conversionStrategy,
-			$this->errorElementFactory,
 			$this->classMapperProvider,
 			$this->hierarchyConfig,
 			$this->options,
 			$this->collectErrors,
-			$this->defaultExtraKeysBehavior,
-		);
-	}
-
-	public function withErrorElementFactory(ErrorElementFactory $errorElementFactory): TypeContext
-	{
-		return new self(
-			$this->conversionStrategy,
-			$errorElementFactory,
-			$this->classMapperProvider,
-			$this->hierarchyConfig,
-			$this->options,
-			$this->collectErrors,
-			$this->defaultExtraKeysBehavior,
 		);
 	}
 
@@ -56,25 +37,10 @@ final readonly class TypeContext
 	{
 		return new self(
 			$this->conversionStrategy,
-			$this->errorElementFactory,
 			$classMapperProvider,
 			$this->hierarchyConfig,
 			$this->options,
 			$this->collectErrors,
-			$this->defaultExtraKeysBehavior,
-		);
-	}
-
-	public function withDefaultExtraKeysBehavior(?ExtraKeysBehavior $behavior): TypeContext
-	{
-		return new self(
-			$this->conversionStrategy,
-			$this->errorElementFactory,
-			$this->classMapperProvider,
-			$this->hierarchyConfig,
-			$this->options,
-			$this->collectErrors,
-			$behavior,
 		);
 	}
 
@@ -103,22 +69,18 @@ final readonly class TypeContext
 			if ($childConfig instanceof TypeHierarchyConfig) {
 				$contexts[$key] = new self(
 					$this->conversionStrategy,
-					$this->errorElementFactory,
 					$this->classMapperProvider,
 					$childConfig,
 					$this->options,
 					$this->collectErrors,
-					$this->defaultExtraKeysBehavior,
 				);
 			} else {
 				$contexts[$key] = new self(
 					$childConfig->conversionStrategy ?? $this->conversionStrategy,
-					$this->errorElementFactory,
 					$this->classMapperProvider,
 					null,
 					$childConfig->options,
 					$this->collectErrors,
-					$childConfig->defaultExtraKeysBehavior ?? $this->defaultExtraKeysBehavior,
 				);
 			}
 		}

@@ -5,6 +5,8 @@ namespace Shredio\TypeSchema\Types;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
 use Shredio\TypeSchema\Exception\ClassMapperNotFoundException;
+use Shredio\TypeSchema\Issue\IssueCollection;
+use Shredio\TypeSchema\Result\Failure;
 use Shredio\TypeSchema\Validation\ValidationFailed;
 
 /**
@@ -39,7 +41,7 @@ final readonly class MapperType extends Type implements ClassBoundType
 		try {
 			return $mapper->parse($valueToParse, $context);
 		} catch (ValidationFailed $exception) {
-			return $context->errorElementFactory->createCollection($exception->getErrors());
+			return new Failure(IssueCollection::create($exception->getIssues()));
 		}
 	}
 

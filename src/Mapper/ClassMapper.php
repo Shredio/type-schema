@@ -7,7 +7,7 @@ use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use PHPStan\PhpDocParser\Ast\Type\UnionTypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
 use Shredio\TypeSchema\Context\TypeDefinition;
-use Shredio\TypeSchema\Error\ErrorElement;
+use Shredio\TypeSchema\Result\Failure;
 
 /**
  * @template T of object
@@ -22,7 +22,7 @@ abstract readonly class ClassMapper
 
 	/**
 	 * @param class-string<T> $className
-	 * @return T|ErrorElement
+	 * @return T|Failure
 	 */
 	abstract public function create(string $className, mixed $valueToParse, TypeContext $context): object;
 

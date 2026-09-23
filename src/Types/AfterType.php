@@ -5,7 +5,9 @@ namespace Shredio\TypeSchema\Types;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
-use Shredio\TypeSchema\TypeSystem\TypeNodeHelper;
+use Shredio\TypeSchema\Result\Failure;
+use Shredio\TypeSchema\Result\WithNotices;
+use Shredio\TypeSchema\Validation\TypeSystem\TypeNodeHelper;
 
 /**
  * @template-covariant T
@@ -33,8 +35,15 @@ final readonly class AfterType extends Type
 	public function parse(mixed $valueToParse, TypeContext $context): mixed
 	{
 		$val = $this->type->parse($valueToParse, $context);
-		if ($this->isError($val)) {
+		if ($val instanceof Failure) {
 			return $val;
+		}
+
+		if ($val instanceof WithNotices) {
+			/** @var T $innerValue */
+			$innerValue = $val->value;
+
+			return $val->withValue(($this->callback)($innerValue, $context));
 		}
 
 		return ($this->callback)($val, $context);
