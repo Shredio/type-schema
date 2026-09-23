@@ -6,7 +6,6 @@ use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
 use Shredio\TypeSchema\Issue\IssueNode;
 use Shredio\TypeSchema\Result\Failure;
-use Shredio\TypeSchema\Result\WithNotices;
 
 /**
  * @template T
@@ -52,7 +51,7 @@ final readonly class BeforeType extends Type
 			);
 		}
 
-		if ($result instanceof WithNotices) {
+		if ($this->hasNotices($result)) {
 			return $result->withNotices(($this->mapIssues)($result->notices));
 		}
 

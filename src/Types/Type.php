@@ -16,6 +16,7 @@ use Shredio\TypeSchema\Issue\InvalidType;
 use Shredio\TypeSchema\Issue\IssueNode;
 use Shredio\TypeSchema\Result\Failure;
 use Shredio\TypeSchema\Result\WithNotices;
+use Shredio\TypeSchema\Validation\ValidationFailed;
 
 /**
  * @template-covariant T
@@ -28,6 +29,8 @@ abstract readonly class Type
 	 * A clean value is returned as is, without any wrapper.
 	 *
 	 * @return T|Failure|WithNotices<T>
+	 *
+	 * @throws ValidationFailed when a mapped object rejects the parsed values
 	 */
 	abstract public function parse(mixed $valueToParse, TypeContext $context): mixed;
 
@@ -88,6 +91,18 @@ abstract readonly class Type
 	protected function isError(mixed $value): bool
 	{
 		return $value instanceof Failure;
+	}
+
+	/**
+	 * Narrows a parse result to WithNotices of the same value type, plain instanceof loses the value type in generics.
+	 *
+	 * @template TValue
+	 * @param TValue|Failure|WithNotices<TValue> $result
+	 * @phpstan-assert-if-true WithNotices<TValue> $result
+	 */
+	final protected function hasNotices(mixed $result): bool
+	{
+		return $result instanceof WithNotices;
 	}
 
 	final protected function createInvalidTypeFailure(mixed $value, TypeContext $context): Failure

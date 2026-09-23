@@ -6,7 +6,6 @@ use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
 use Shredio\TypeSchema\Result\Failure;
-use Shredio\TypeSchema\Result\WithNotices;
 use Shredio\TypeSchema\Validation\TypeSystem\TypeNodeHelper;
 
 /**
@@ -39,11 +38,8 @@ final readonly class AfterType extends Type
 			return $val;
 		}
 
-		if ($val instanceof WithNotices) {
-			/** @var T $innerValue */
-			$innerValue = $val->value;
-
-			return $val->withValue(($this->callback)($innerValue, $context));
+		if ($this->hasNotices($val)) {
+			return $val->withValue(($this->callback)($val->value, $context));
 		}
 
 		return ($this->callback)($val, $context);

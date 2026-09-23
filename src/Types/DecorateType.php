@@ -4,7 +4,6 @@ namespace Shredio\TypeSchema\Types;
 
 use Shredio\TypeSchema\Context\TypeContext;
 use Shredio\TypeSchema\Result\Failure;
-use Shredio\TypeSchema\Result\WithNotices;
 
 /**
  * @template-covariant T
@@ -21,10 +20,8 @@ abstract readonly class DecorateType extends Type
 			return $this->withOwnDefinition($value, $context);
 		}
 
-		if ($value instanceof WithNotices) {
-			/** @var TDecorated $innerValue */
-			$innerValue = $value->value;
-			$decorated = $this->decorate($innerValue, $context);
+		if ($this->hasNotices($value)) {
+			$decorated = $this->decorate($value->value, $context);
 			if ($decorated instanceof Failure) {
 				return new Failure($decorated->errors, $value->notices);
 			}

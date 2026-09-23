@@ -6,7 +6,6 @@ use PHPStan\PhpDocParser\Ast\Type\TypeNode;
 use Shredio\TypeSchema\Context\TypeContext;
 use Shredio\TypeSchema\Issue\IssueNode;
 use Shredio\TypeSchema\Result\Failure;
-use Shredio\TypeSchema\Result\WithNotices;
 
 /**
  * @template-covariant T
@@ -37,10 +36,8 @@ final readonly class ValidateType extends Type
 			return $val;
 		}
 
-		if ($val instanceof WithNotices) {
-			/** @var T $innerValue */
-			$innerValue = $val->value;
-			$errors = ($this->callback)($innerValue, $context);
+		if ($this->hasNotices($val)) {
+			$errors = ($this->callback)($val->value, $context);
 
 			return $errors === null ? $val : new Failure($errors, $val->notices);
 		}

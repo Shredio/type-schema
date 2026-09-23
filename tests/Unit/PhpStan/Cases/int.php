@@ -11,5 +11,5 @@ assertType('int', TypeSchemaProcessor::createDefault()->process(true, $s->int())
 assertType('int|null', TypeSchemaProcessor::createDefault()->process(true, $s->nullable($s->int())));
 
 // after
-assertType('Shredio\TypeSchema\Types\Type<lowercase-string&numeric-string&uppercase-string>', $s->int()->after(fn (int $v): string => (string) $v));
-assertType('lowercase-string&numeric-string&uppercase-string', TypeSchemaProcessor::createDefault()->process(123, $s->int()->after(fn (int $v): string => (string) $v)));
+assertType('Shredio\TypeSchema\Types\Type<non-falsy-string>', $s->int()->after(fn (int $v): string => "Value $v"));
+assertType('non-falsy-string', TypeSchemaProcessor::createDefault()->process(123, $s->int()->after(fn (int $v): string => "Value $v")));

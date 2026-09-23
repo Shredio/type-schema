@@ -7,8 +7,8 @@ use function PHPStan\Testing\assertType;
 $s = TypeSchema::get();
 
 // Basic transformation: int to string
-assertType('Shredio\TypeSchema\Types\Type<lowercase-string&numeric-string&uppercase-string>', $s->int()->after(fn (int $v): string => (string) $v));
-assertType('lowercase-string&numeric-string&uppercase-string', TypeSchemaProcessor::createDefault()->process(123, $s->int()->after(fn (int $v): string => (string) $v)));
+assertType('Shredio\TypeSchema\Types\Type<non-falsy-string>', $s->int()->after(fn (int $v): string => "Value $v"));
+assertType('non-falsy-string', TypeSchemaProcessor::createDefault()->process(123, $s->int()->after(fn (int $v): string => "Value $v")));
 
 // Transformation: int to int (calculation)
 assertType('Shredio\TypeSchema\Types\Type<int>', $s->int()->after(fn (int $v): int => $v * 2));
@@ -35,8 +35,8 @@ assertType('Shredio\TypeSchema\Types\Type<non-falsy-string>', $s->int()->after(f
 assertType('non-falsy-string', TypeSchemaProcessor::createDefault()->process(3, $s->int()->after(fn (int $v): int => $v * 2)->after(fn (int $v): string => "Result: $v")));
 
 // With nullable types
-assertType('Shredio\TypeSchema\Types\Type<(lowercase-string&numeric-string&uppercase-string)|null>', $s->nullable($s->int())->after(fn (?int $v): ?string => $v !== null ? (string) $v : null));
-assertType('(lowercase-string&numeric-string&uppercase-string)|null', TypeSchemaProcessor::createDefault()->process(null, $s->nullable($s->int())->after(fn (?int $v): ?string => $v !== null ? (string) $v : null)));
+assertType('Shredio\TypeSchema\Types\Type<non-falsy-string|null>', $s->nullable($s->int())->after(fn (?int $v): ?string => $v !== null ? "Value $v" : null));
+assertType('non-falsy-string|null', TypeSchemaProcessor::createDefault()->process(null, $s->nullable($s->int())->after(fn (?int $v): ?string => $v !== null ? "Value $v" : null)));
 
 // Complex transformation with union types
 assertType('Shredio\TypeSchema\Types\Type<string>', $s->int()->after(function (int $v): string {

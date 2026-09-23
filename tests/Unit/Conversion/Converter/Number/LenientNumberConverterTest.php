@@ -399,7 +399,7 @@ final class LenientNumberConverterTest extends TestCase
 		$this->assertSame(3, $converter->int(2.5));
 	}
 
-	#[RequiresPhp('>=8.4')]
+	#[RequiresPhp('>= 8.4.0')]
 	public function testIntRoundingModeWithRoundingModeEnum(): void
 	{
 		$converter = new LenientNumberConverter(

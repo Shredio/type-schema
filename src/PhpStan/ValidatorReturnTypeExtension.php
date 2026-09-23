@@ -17,14 +17,14 @@ use Shredio\TypeSchema\TypeSchema;
 final readonly class ValidatorReturnTypeExtension implements DynamicMethodReturnTypeExtension
 {
 
-	/** @var array<non-empty-string, array{ args: array<string>, create: callable }> */
+	/** @var array<non-empty-string, array{ intArgumentCount: int<1, max>, create: callable(int|null, int|null): Type }> */
 	private array $mapping;
 
 	public function __construct()
 	{
 		$this->mapping = [
 			'intRange' => [
-				'args' => ['int', 'int'],
+				'intArgumentCount' => 2,
 				'create' => static fn (?int $min, ?int $max): Type => IntegerRangeType::fromInterval($min, $max),
 			],
 		];
@@ -80,32 +80,24 @@ final readonly class ValidatorReturnTypeExtension implements DynamicMethodReturn
 
 		$valid = false;
 		$values = [];
-		foreach ($mapping['args'] as $i => $requiredType) {
-			if (!isset($args[$i])) {
-				$values[] = null;
-				continue;
-			}
-			$argType = $scope->getType($args[$i]->value);
-			$constantScalars = $argType->getConstantScalarValues();
-			if (count($constantScalars) !== 1) {
-				$values[] = null;
-				continue;
+		for ($i = 0; $i < $mapping['intArgumentCount']; $i++) {
+			$value = null;
+			if (isset($args[$i])) {
+				$constantScalars = $scope->getType($args[$i]->value)->getConstantScalarValues();
+				if (count($constantScalars) === 1 && is_int($constantScalars[0])) {
+					$value = $constantScalars[0];
+					$valid = true;
+				}
 			}
 
-			if (get_debug_type($constantScalars[0]) !== $requiredType) {
-				$values[] = null;
-				continue;
-			}
-
-			$valid = true;
-			$values[] = $constantScalars[0];
+			$values[] = $value;
 		}
 
 		if (!$valid) {
 			return null;
 		}
 
-		return new GenericObjectType(AbstractType::class, [$mapping['create'](...$values)]); // @phpstan-ignore argument.type
+		return new GenericObjectType(AbstractType::class, [$mapping['create'](...$values)]);
 	}
 
 }
