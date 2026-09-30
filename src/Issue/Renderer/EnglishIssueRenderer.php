@@ -17,6 +17,7 @@ use Shredio\TypeSchema\Issue\NotAllowedValue;
 use Shredio\TypeSchema\Issue\NumberOutOfRange;
 use Shredio\TypeSchema\Issue\Report\ErrorReportConfig;
 use Stringable;
+use Symfony\Contracts\Translation\TranslatableInterface;
 
 final readonly class EnglishIssueRenderer implements IssueRenderer
 {
@@ -24,7 +25,9 @@ final readonly class EnglishIssueRenderer implements IssueRenderer
 	public function render(Issue $issue, ErrorReportConfig $config): string|Stringable
 	{
 		return match (true) {
-			$issue instanceof CustomIssue => $issue->message,
+			$issue instanceof CustomIssue => $issue->message instanceof TranslatableInterface
+				? UntranslatedMessage::render($issue->message)
+				: $issue->message,
 			$issue instanceof InvalidType => $this->renderInvalidType($issue, $config),
 			$issue instanceof MissingKey => 'Please provide a value for this field.',
 			$issue instanceof ExtraKey => 'This field is not allowed.',

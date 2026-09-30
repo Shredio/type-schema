@@ -2,17 +2,20 @@
 
 namespace Shredio\TypeSchema\Issue;
 
+use Shredio\TypeSchema\Issue\Renderer\UntranslatedMessage;
 use Stringable;
+use Symfony\Contracts\Translation\TranslatableInterface;
 
 /**
- * Issue with a ready-made user message, e.g. from custom validators or Symfony constraints.
+ * Issue with a ready-made user message, e.g. from custom validators or Symfony constraints. A translatable
+ * message is translated by a renderer that has a translator, and rendered untranslated everywhere else.
  */
 final readonly class CustomIssue extends Issue
 {
 
 	public function __construct(
-		public string|Stringable $message,
-		public string|Stringable|null $messageForDeveloper = null,
+		public string|Stringable|TranslatableInterface $message,
+		public string|Stringable|TranslatableInterface|null $messageForDeveloper = null,
 		public ErrorCategory $category = ErrorCategory::Validation,
 	)
 	{
@@ -25,7 +28,9 @@ final readonly class CustomIssue extends Issue
 
 	public function getMessageForDeveloper(): string|Stringable
 	{
-		return $this->messageForDeveloper ?? $this->message;
+		$message = $this->messageForDeveloper ?? $this->message;
+
+		return $message instanceof TranslatableInterface ? UntranslatedMessage::render($message) : $message;
 	}
 
 }

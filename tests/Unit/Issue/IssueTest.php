@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Issue;
 
+use Locale;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\UnionTypeNode;
 use PHPUnit\Framework\TestCase;
@@ -20,6 +21,7 @@ use Shredio\TypeSchema\Issue\MissingKey;
 use Shredio\TypeSchema\Issue\NotAllowedValue;
 use Shredio\TypeSchema\Issue\NumberOutOfRange;
 use Shredio\TypeSchema\Issue\Report\ErrorReportConfig;
+use Symfony\Component\Translation\TranslatableMessage;
 
 final class IssueTest extends TestCase
 {
@@ -57,6 +59,31 @@ final class IssueTest extends TestCase
 	{
 		$this->assertSame('user', (new CustomIssue('user'))->getMessageForDeveloper());
 		$this->assertSame('developer', (new CustomIssue('user', 'developer'))->getMessageForDeveloper());
+	}
+
+	public function testCustomIssueRendersTranslatableMessageForDeveloperUntranslated(): void
+	{
+		$message = new TranslatableMessage('Coupon {code} is not valid.', ['{code}' => 'ABC'], 'account');
+
+		$this->assertSame('Coupon ABC is not valid.', (new CustomIssue($message))->getMessageForDeveloper());
+		$this->assertSame('Coupon ABC is not valid.', (new CustomIssue('user', $message))->getMessageForDeveloper());
+	}
+
+	public function testCustomIssueRendersPluralMessageForDeveloperByEnglishRulesWhateverTheDefaultLocale(): void
+	{
+		$message = new TranslatableMessage(
+			'It should have {{ limit }} character or less.|It should have {{ limit }} characters or less.',
+			['{{ limit }}' => 30, '%count%' => 30],
+			'validators',
+		);
+		$defaultLocale = Locale::getDefault();
+		Locale::setDefault('cs');
+
+		try {
+			$this->assertSame('It should have 30 characters or less.', (new CustomIssue($message))->getMessageForDeveloper());
+		} finally {
+			Locale::setDefault($defaultLocale);
+		}
 	}
 
 	public function testInvalidTypeDeveloperMessageIncludesValueAndExpectedType(): void

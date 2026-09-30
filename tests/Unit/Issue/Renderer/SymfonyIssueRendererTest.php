@@ -21,6 +21,9 @@ use Shredio\TypeSchema\Issue\NumberOutOfRange;
 use Shredio\TypeSchema\Issue\Renderer\SymfonyIssueRenderer;
 use Shredio\TypeSchema\Issue\Report\ErrorReportConfig;
 use Symfony\Component\Translation\IdentityTranslator;
+use Symfony\Component\Translation\Loader\ArrayLoader;
+use Symfony\Component\Translation\TranslatableMessage;
+use Symfony\Component\Translation\Translator;
 
 #[CoversClass(SymfonyIssueRenderer::class)]
 final class SymfonyIssueRendererTest extends TestCase
@@ -57,6 +60,17 @@ final class SymfonyIssueRendererTest extends TestCase
 		$renderer = new SymfonyIssueRenderer(new IdentityTranslator());
 
 		$this->assertSame($expectedMessage, (string) $renderer->render($issue, new ErrorReportConfig()));
+	}
+
+	public function testRenderTranslatesTranslatableCustomMessageInItsOwnDomain(): void
+	{
+		$translator = new Translator('en');
+		$translator->addLoader('array', new ArrayLoader());
+		$translator->addResource('array', ['coupon.invalid' => 'The coupon {code} is not valid.'], 'en', 'account');
+		$renderer = new SymfonyIssueRenderer($translator);
+		$issue = new CustomIssue(new TranslatableMessage('coupon.invalid', ['{code}' => 'ABC'], 'account'));
+
+		$this->assertSame('The coupon ABC is not valid.', $renderer->render($issue, new ErrorReportConfig()));
 	}
 
 }

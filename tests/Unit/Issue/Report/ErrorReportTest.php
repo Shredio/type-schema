@@ -18,6 +18,9 @@ use Shredio\TypeSchema\Issue\Renderer\SymfonyIssueRenderer;
 use Shredio\TypeSchema\Issue\Report\ErrorReport;
 use Shredio\TypeSchema\Issue\Report\ErrorReportConfig;
 use Symfony\Component\Translation\IdentityTranslator;
+use Symfony\Component\Translation\Loader\ArrayLoader;
+use Symfony\Component\Translation\TranslatableMessage;
+use Symfony\Component\Translation\Translator;
 
 #[CoversClass(ErrorReport::class)]
 final class ErrorReportTest extends TestCase
@@ -193,6 +196,25 @@ final class ErrorReportTest extends TestCase
 
 		$this->assertSame('This value should be of type int.', (string) $exposed[0]->message);
 		$this->assertSame('This value is not valid.', (string) $hidden[0]->message);
+	}
+
+	public function testFromIssuesShowsDevelopersTheTranslatedMessageOfACustomIssueWithoutItsOwn(): void
+	{
+		$translator = new Translator('cs');
+		$translator->addLoader('array', new ArrayLoader());
+		$translator->addResource('array', ['coupon.invalid' => 'Kupon {code} neplatí.'], 'cs', 'account');
+		$message = new TranslatableMessage('coupon.invalid', ['{code}' => 'ABC'], 'account');
+		$node = new IssueCollection([
+			new IssuePath(new CustomIssue($message), new Path('coupon')),
+			new IssuePath(new CustomIssue($message, 'Coupon ABC expired yesterday.'), new Path('code')),
+		]);
+
+		$reports = ErrorReport::fromIssues($node, new SymfonyIssueRenderer($translator));
+
+		$this->assertSame('Kupon ABC neplatí.', $reports[0]->message);
+		$this->assertSame('Kupon ABC neplatí.', $reports[0]->messageForDeveloper);
+		$this->assertSame('Kupon ABC neplatí.', $reports[1]->message);
+		$this->assertSame('Coupon ABC expired yesterday.', $reports[1]->messageForDeveloper);
 	}
 
 }

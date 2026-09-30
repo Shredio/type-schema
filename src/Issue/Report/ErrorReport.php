@@ -2,6 +2,7 @@
 
 namespace Shredio\TypeSchema\Issue\Report;
 
+use Shredio\TypeSchema\Issue\CustomIssue;
 use Shredio\TypeSchema\Issue\ErrorCategory;
 use Shredio\TypeSchema\Issue\Issue;
 use Shredio\TypeSchema\Issue\IssueNode;
@@ -37,13 +38,17 @@ final readonly class ErrorReport
 		$config ??= new ErrorReportConfig();
 
 		return array_map(
-			static fn (LocatedIssue $locatedIssue): self => new self(
-				$renderer->render($locatedIssue->issue, $config),
-				$locatedIssue->issue->getMessageForDeveloper(),
-				$locatedIssue->path,
-				$locatedIssue->issue->getCategory(),
-				$locatedIssue->issue,
-			),
+			static function (LocatedIssue $locatedIssue) use ($renderer, $config): self {
+				$message = $renderer->render($locatedIssue->issue, $config);
+
+				return new self(
+					$message,
+					self::getMessageForDeveloper($locatedIssue->issue, $message),
+					$locatedIssue->path,
+					$locatedIssue->issue->getCategory(),
+					$locatedIssue->issue,
+				);
+			},
 			$node->getIssues(),
 		);
 	}
@@ -90,6 +95,19 @@ final readonly class ErrorReport
 		}
 		
 		return implode($separator, $parts);
+	}
+
+	/**
+	 * A custom issue without a message of its own for developers shows them the message users get, as the renderer
+	 * rendered it - a translatable one translated, not its untranslated source text.
+	 */
+	private static function getMessageForDeveloper(Issue $issue, string|Stringable $renderedMessage): string|Stringable
+	{
+		if ($issue instanceof CustomIssue && $issue->messageForDeveloper === null) {
+			return $renderedMessage;
+		}
+
+		return $issue->getMessageForDeveloper();
 	}
 
 	private function escapeKey(string $key): string

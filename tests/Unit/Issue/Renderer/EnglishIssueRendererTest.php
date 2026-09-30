@@ -25,6 +25,7 @@ use Shredio\TypeSchema\Issue\NotAllowedValue;
 use Shredio\TypeSchema\Issue\NumberOutOfRange;
 use Shredio\TypeSchema\Issue\Renderer\EnglishIssueRenderer;
 use Shredio\TypeSchema\Issue\Report\ErrorReportConfig;
+use Symfony\Component\Translation\TranslatableMessage;
 
 #[CoversClass(EnglishIssueRenderer::class)]
 final class EnglishIssueRendererTest extends TestCase
@@ -47,6 +48,10 @@ final class EnglishIssueRendererTest extends TestCase
 		yield 'invalid date' => [new InvalidDate('not-a-date'), 'Please provide a valid date.'];
 		yield 'invalid value' => [new InvalidValue(NAN, 'NaN values are not allowed'), 'The provided value is not valid.'];
 		yield 'custom issue' => [new CustomIssue('Name cannot be empty.', 'dev'), 'Name cannot be empty.'];
+		yield 'custom translatable issue' => [
+			new CustomIssue(new TranslatableMessage('Coupon {code} is not valid.', ['{code}' => 'ABC'], 'account')),
+			'Coupon ABC is not valid.',
+		];
 		yield 'number at least' => [
 			new NumberOutOfRange(0, NumberInclusiveRange::fromInts(min: 1), RangeInclusiveDecision::ShouldBeGreaterOrEqual),
 			'Must be at least 1.',
