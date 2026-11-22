@@ -2,7 +2,6 @@
 
 namespace Shredio\TypeSchema\Helper;
 
-use Nette\Utils\Floats;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprIntegerNode;
 use PHPStan\PhpDocParser\Ast\Type\ConstTypeNode;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
@@ -115,7 +114,7 @@ final readonly class NumberExclusiveRange implements NumberRange
 	{
 		if ($this->min !== null) {
 			if (is_float($this->min)) {
-				if (Floats::isLessThanOrEqualTo($value, $this->min)) {
+				if (FloatComparison::isLessThanOrEqualTo($value, $this->min)) {
 					return RangeExclusiveDecision::ShouldBeGreater;
 				}
 			} else if ($value <= $this->min) {
@@ -125,7 +124,7 @@ final readonly class NumberExclusiveRange implements NumberRange
 
 		if ($this->max !== null) {
 			if (is_float($this->max)) {
-				if (Floats::isGreaterThanOrEqualTo($value, $this->max)) {
+				if (FloatComparison::isGreaterThanOrEqualTo($value, $this->max)) {
 					return RangeExclusiveDecision::ShouldBeLess;
 				}
 			} else if ($value >= $this->max) {

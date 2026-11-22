@@ -207,4 +207,32 @@ final class NumberExclusiveRangeTest extends TestCase
 		NumberExclusiveRange::fromFloats(max: INF);
 	}
 
+	public function testFloatBoundsTolerateRoundingErrors(): void
+	{
+		$this->assertSame(RangeExclusiveDecision::ShouldBeGreater, NumberExclusiveRange::fromFloats(min: 0.3)->decide(0.1 + 0.2));
+		$this->assertSame(RangeExclusiveDecision::ShouldBeLess, NumberExclusiveRange::fromFloats(max: 0.3)->decide(0.3 - 1e-12));
+		$this->assertSame(RangeExclusiveDecision::Ok, NumberExclusiveRange::fromFloats(min: 0.3)->decide(0.3001));
+		$this->assertSame(RangeExclusiveDecision::Ok, NumberExclusiveRange::fromFloats(max: 0.3)->decide(0.2999));
+	}
+
+	public function testIntBoundsAreComparedExactly(): void
+	{
+		$this->assertSame(RangeExclusiveDecision::Ok, NumberExclusiveRange::fromInts(min: 0)->decide(1e-12));
+		$this->assertSame(RangeExclusiveDecision::Ok, NumberExclusiveRange::fromInts(max: 0)->decide(-1e-12));
+	}
+
+	public function testOnlyExactRangeHasExactValue(): void
+	{
+		$this->assertNull(NumberExclusiveRange::fromInts(5, 6)->getExactValue());
+		$this->assertNull(NumberExclusiveRange::fromFloats(1.5, 2.5)->getExactValue());
+		$this->assertSame(5, NumberExclusiveRange::exactInt(5)->getExactValue());
+		$this->assertSame(1.5, NumberExclusiveRange::exactFloat(1.5)->getExactValue());
+	}
+
+	public function testToStringWithoutParenthesesForOpenRanges(): void
+	{
+		$this->assertSame('min, max', NumberExclusiveRange::fromInts()->toString(false));
+		$this->assertSame('1.5, max', NumberExclusiveRange::fromFloats(min: 1.5)->toString(false));
+	}
+
 }

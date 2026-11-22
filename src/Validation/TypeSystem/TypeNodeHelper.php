@@ -5,9 +5,6 @@ namespace Shredio\TypeSchema\Validation\TypeSystem;
 use BackedEnum;
 use Generator;
 use LogicException;
-use Nette\Utils\Arrays;
-use Nette\Utils\Reflection;
-use Nette\Utils\Validators;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprFalseNode;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprFloatNode;
 use PHPStan\PhpDocParser\Ast\ConstExpr\ConstExprIntegerNode;
@@ -208,7 +205,7 @@ final class TypeNodeHelper
 		}
 
 		if ($type instanceof UnionTypeNode) {
-			return Arrays::some($type->types, self::isNullable(...));
+			return self::arrayAny($type->types, self::isNullable(...));
 		}
 
 		return false;
@@ -327,7 +324,7 @@ final class TypeNodeHelper
 
 			if (!self::isKeyword($type) || $type->name === 'self' || $type->name === 'static' || $type->name === 'parent') {
 				if (!in_array($type->name, $genericParameterNames, true)) {
-					$type->name = Reflection::expandClassName($type->name, $context);
+					$type->name = ClassNameResolver::resolve($type->name, $context);
 				}
 			}
 		} elseif ($type instanceof ArrayShapeItemNode) {
@@ -453,19 +450,19 @@ final class TypeNodeHelper
 
 		// expand complex types
 		if ($a instanceof UnionTypeNode) {
-			return Arrays::every($a->types, static fn (TypeNode $inner) => self::isSubTypeOf($inner, $b));
+			return self::arrayAll($a->types, static fn (TypeNode $inner) => self::isSubTypeOf($inner, $b));
 		}
 
 		if ($b instanceof UnionTypeNode) {
-			return Arrays::some($b->types, static fn (TypeNode $inner) => self::isSubTypeOf($a, $inner));
+			return self::arrayAny($b->types, static fn (TypeNode $inner) => self::isSubTypeOf($a, $inner));
 		}
 
 		if ($a instanceof IntersectionTypeNode) {
-			return Arrays::every($a->types, static fn (TypeNode $inner) => self::isSubTypeOf($inner, $b));
+			return self::arrayAll($a->types, static fn (TypeNode $inner) => self::isSubTypeOf($inner, $b));
 		}
 
 		if ($b instanceof IntersectionTypeNode) {
-			return Arrays::some($b->types, static fn (TypeNode $inner) => self::isSubTypeOf($a, $inner));
+			return self::arrayAny($b->types, static fn (TypeNode $inner) => self::isSubTypeOf($a, $inner));
 		}
 
 		if ($b instanceof IdentifierTypeNode) {
@@ -529,7 +526,7 @@ final class TypeNodeHelper
 				},
 
 				'list' => match (true) {
-					$a instanceof ArrayShapeNode => Arrays::every($a->items, static fn (ArrayShapeItemNode $item, int $idx) => self::getArrayShapeKey($item) === (string) $idx),
+					$a instanceof ArrayShapeNode => self::arrayAll($a->items, static fn (ArrayShapeItemNode $item, int $idx) => self::getArrayShapeKey($item) === (string) $idx),
 					$a instanceof IdentifierTypeNode => $a->name === 'list' || $a->name === 'non-empty-list',
 					$a instanceof GenericTypeNode => $a->type->name === 'list' || $a->type->name === 'non-empty-list',
 					default => false,
@@ -540,8 +537,8 @@ final class TypeNodeHelper
 				'never' => $a instanceof IdentifierTypeNode && $a->name === 'never',
 
 				'non-empty-list' => match (true) {
-					$a instanceof ArrayShapeNode => Arrays::every($a->items, static fn (ArrayShapeItemNode $item, int $idx) => self::getArrayShapeKey($item) === (string) $idx)
-													&& Arrays::some($a->items, static fn (ArrayShapeItemNode $item) => !$item->optional),
+					$a instanceof ArrayShapeNode => self::arrayAll($a->items, static fn (ArrayShapeItemNode $item, int $idx) => self::getArrayShapeKey($item) === (string) $idx)
+													&& self::arrayAny($a->items, static fn (ArrayShapeItemNode $item) => !$item->optional),
 					$a instanceof IdentifierTypeNode => $a->name === 'non-empty-list',
 					$a instanceof GenericTypeNode => $a->type->name === 'non-empty-list',
 					default => false,
@@ -675,16 +672,16 @@ final class TypeNodeHelper
 		$type = self::normalizeType($type);
 
 		if ($type instanceof UnionTypeNode) {
-			return self::union(...Arrays::map(
-				$type->types,
+			return self::union(...array_map(
 				static fn (TypeNode $type) => self::inferGenericParameter($type, $typeName, $parameter),
+				$type->types,
 			));
 		}
 
 		if ($type instanceof IntersectionTypeNode) {
-			return self::intersect(...Arrays::map(
-				$type->types,
+			return self::intersect(...array_map(
 				static fn (TypeNode $type) => self::inferGenericParameter($type, $typeName, $parameter),
+				$type->types,
 			));
 		}
 
@@ -696,9 +693,9 @@ final class TypeNodeHelper
 			$superTypes = array_values(self::getGenericTypeSuperTypes($type));
 
 			if (count($superTypes) > 0) {
-				return self::union(...Arrays::map(
-					$superTypes,
+				return self::union(...array_map(
 					static fn (TypeNode $superType) => self::inferGenericParameter($superType, $typeName, $parameter),
+					$superTypes,
 				));
 			}
 		}
@@ -764,9 +761,9 @@ final class TypeNodeHelper
 			throw new LogicException('Invalid downcast path');
 		}
 
-		$targetTypeParameters = Arrays::map($targetTypeDef->parameters, static function (GenericTypeParameter $parameter): TypeNode {
+		$targetTypeParameters = array_map(static function (GenericTypeParameter $parameter): TypeNode {
 			return $parameter->default ?? $parameter->bound ?? new IdentifierTypeNode('mixed');
-		});
+		}, $targetTypeDef->parameters);
 
 		foreach ($targetTypeDef->extends[$type->type->name] as $sourceIndex => $typeOrIndex) {
 			if (is_int($typeOrIndex)) {
@@ -784,7 +781,7 @@ final class TypeNodeHelper
 	{
 		if (strcasecmp($a->type->name, $b->type->name) === 0) {
 			$typeDef = self::getGenericTypeDefinition($a->type);
-			return Arrays::every($typeDef->parameters, static function (GenericTypeParameter $parameter, int $idx) use ($a, $b): bool {
+			return self::arrayAll($typeDef->parameters, static function (GenericTypeParameter $parameter, int $idx) use ($a, $b): bool {
 				$genericTypeA = self::getGenericTypeParameter($a, $idx);
 				$genericTypeB = self::getGenericTypeParameter($b, $idx);
 
@@ -796,7 +793,7 @@ final class TypeNodeHelper
 			});
 		}
 
-		return Arrays::some(self::getGenericTypeSuperTypes($a), static function (GenericTypeNode $superType) use ($b): bool {
+		return self::arrayAny(self::getGenericTypeSuperTypes($a), static function (GenericTypeNode $superType) use ($b): bool {
 			return self::isSubTypeOf($superType, $b);
 		});
 	}
@@ -808,11 +805,14 @@ final class TypeNodeHelper
 	{
 		$typeDef = self::getGenericTypeDefinition($type->type);
 
-		return Arrays::map($typeDef->extends, static function (array $mapping, string $superTypeName) use ($type): GenericTypeNode {
-			return new GenericTypeNode(new IdentifierTypeNode($superTypeName), Arrays::map($mapping, static function (TypeNode|int $typeOrIndex) use ($type): TypeNode {
+		$superTypes = [];
+		foreach ($typeDef->extends as $superTypeName => $mapping) {
+			$superTypes[$superTypeName] = new GenericTypeNode(new IdentifierTypeNode($superTypeName), array_map(static function (TypeNode|int $typeOrIndex) use ($type): TypeNode {
 				return $typeOrIndex instanceof TypeNode ? $typeOrIndex : self::getGenericTypeParameter($type, $typeOrIndex);
-			}));
-		});
+			}, $mapping));
+		}
+
+		return $superTypes;
 	}
 
 	private static function getGenericTypeParameter(
@@ -958,11 +958,11 @@ final class TypeNodeHelper
 			if ($node instanceof PhpDocTagNode && ($node->value instanceof ImplementsTagValueNode || $node->value instanceof ExtendsTagValueNode)) {
 				self::resolveClassKeywords($node->value->type, $classReflection, array_keys($genericParameters));
 				$extends[$node->value->type->type->name] = array_values(
-					Arrays::map($node->value->type->genericTypes, static function (TypeNode $type) use ($genericParameterOffsets): TypeNode|int {
+					array_map(static function (TypeNode $type) use ($genericParameterOffsets): TypeNode|int {
 						return $type instanceof IdentifierTypeNode && isset($genericParameterOffsets[$type->name])
 							? $genericParameterOffsets[$type->name]
 							: $type;
-					}),
+					}, $node->value->type->genericTypes),
 				);
 			}
 		}
@@ -987,13 +987,13 @@ final class TypeNodeHelper
 
 	private static function convertArrayShapeToGenericType(ArrayShapeNode $type): GenericTypeNode
 	{
-		$valueType = new UnionTypeNode(Arrays::map($type->items, static fn (ArrayShapeItemNode $item) => $item->valueType));
+		$valueType = new UnionTypeNode(array_map(static fn (ArrayShapeItemNode $item) => $item->valueType, $type->items));
 
-		if (Arrays::every($type->items, static fn (ArrayShapeItemNode $item, int $idx) => self::getArrayShapeKey($item) === (string) $idx)) {
+		if (self::arrayAll($type->items, static fn (ArrayShapeItemNode $item, int $idx) => self::getArrayShapeKey($item) === (string) $idx)) {
 			return new GenericTypeNode(new IdentifierTypeNode('list'), [$valueType]);
 		}
 
-		$keyType = new UnionTypeNode(Arrays::map($type->items, self::getArrayShapeKeyType(...)));
+		$keyType = new UnionTypeNode(array_map(self::getArrayShapeKeyType(...), $type->items));
 		return new GenericTypeNode(new IdentifierTypeNode('array'), [$keyType, $valueType]);
 	}
 
@@ -1102,7 +1102,7 @@ final class TypeNodeHelper
 					$newAutoIndex = max($newAutoIndex, ((int) ($item->keyName->value)) + 1);
 					$newItems[] = $item;
 
-				} elseif ($item->keyName instanceof ConstExprStringNode && Validators::isNumericInt($item->keyName->value)) {
+				} elseif ($item->keyName instanceof ConstExprStringNode && self::isNumericInt($item->keyName->value)) {
 					$newAutoIndex = max($newAutoIndex, ((int) ($item->keyName->value)) + 1);
 					$newItems[] = new ArrayShapeItemNode(
 						keyName: new ConstExprIntegerNode($item->keyName->value),
@@ -1277,7 +1277,7 @@ final class TypeNodeHelper
 					$newAutoIndex = max($newAutoIndex, ((int) ($item->keyName->value)) + 1);
 					$newItems[] = $item;
 
-				} elseif ($item->keyName instanceof ConstExprStringNode && Validators::isNumericInt($item->keyName->value)) {
+				} elseif ($item->keyName instanceof ConstExprStringNode && self::isNumericInt($item->keyName->value)) {
 					$newAutoIndex = max($newAutoIndex, ((int) ($item->keyName->value)) + 1);
 					$newItems[] = new ArrayShapeItemNode(
 						keyName: new ConstExprIntegerNode($item->keyName->value),
@@ -1337,6 +1337,49 @@ final class TypeNodeHelper
 		}
 
 		throw new LogicException('Invalid integer boundary type');
+	}
+
+	/**
+	 * Native equivalent of array_any() from PHP 8.4.
+	 *
+	 * @template TKey of array-key
+	 * @template TValue
+	 * @param array<TKey, TValue> $items
+	 * @param callable(TValue, TKey): bool $predicate
+	 */
+	private static function arrayAny(array $items, callable $predicate): bool
+	{
+		foreach ($items as $key => $item) {
+			if ($predicate($item, $key)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Native equivalent of array_all() from PHP 8.4.
+	 *
+	 * @template TKey of array-key
+	 * @template TValue
+	 * @param array<TKey, TValue> $items
+	 * @param callable(TValue, TKey): bool $predicate
+	 */
+	private static function arrayAll(array $items, callable $predicate): bool
+	{
+		foreach ($items as $key => $item) {
+			if (!$predicate($item, $key)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private static function isNumericInt(string $value): bool
+	{
+		return preg_match('#^[+-]?[0-9]+$#D', $value) === 1;
 	}
 
 }
