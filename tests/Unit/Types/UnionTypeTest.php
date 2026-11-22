@@ -105,6 +105,47 @@ final class UnionTypeTest extends TypeTestCase
 		$this->assertSame([['c']], array_map(static fn ($report): array => $report->toArrayPath(), $result->getNoticeReports()));
 	}
 
+	public function testFirstOfSeveralMembersWithNoticesWins(): void
+	{
+		$t = TypeSchema::get();
+		$type = $t->union([
+			$t->arrayShape(['a' => $t->int()]),
+			$t->arrayShape(['c' => $t->int()]),
+		]);
+
+		$result = $this->getProcessor()->parse(['a' => 1, 'c' => 3], $type);
+
+		$this->assertInstanceOf(Success::class, $result);
+		$this->assertSame(['a' => 1], $result->value);
+		$this->assertSame([['c']], array_map(static fn ($report): array => $report->toArrayPath(), $result->getNoticeReports()));
+	}
+
+	public function testMemberWithNoticesWinsOverValidationFailure(): void
+	{
+		$t = TypeSchema::get();
+		$type = $t->union([
+			$t->arrayShape(['a' => $t->intRange(5, 10)]),
+			$t->arrayShape(['a' => $t->int()]),
+		]);
+
+		$result = $this->getProcessor()->parse(['a' => 1, 'extra' => 2], $type);
+
+		$this->assertInstanceOf(Success::class, $result);
+		$this->assertSame(['a' => 1], $result->value);
+		$this->assertTrue($result->hasNotices());
+	}
+
+	public function testFirstValidationFailureIsReturned(): void
+	{
+		$t = TypeSchema::get();
+		$type = $t->union([$t->string(), $t->intRange(5, 10), $t->intRange(1, 3)]);
+
+		$result = $this->getProcessor()->parse(20, $type);
+
+		$this->assertInstanceOf(Failure::class, $result);
+		$this->assertSame('Value 20 is not in the expected range [5, 10].', $result->getReports()[0]->messageForDeveloper);
+	}
+
 	public function testNoticesOfFailedMembersAreDiscarded(): void
 	{
 		$t = TypeSchema::get();

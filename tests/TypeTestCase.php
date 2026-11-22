@@ -4,6 +4,7 @@ namespace Tests;
 
 use LogicException;
 use Shredio\TypeSchema\Config\TypeConfig;
+use Shredio\TypeSchema\Result\Failure;
 use Shredio\TypeSchema\Types\Type;
 use Tests\Common\TestCaseTrait;
 use Tests\Common\TestConversionStrategy;
@@ -86,11 +87,18 @@ abstract class TypeTestCase extends TestCase
 			}
 
 			$conversionStrategy = new TestConversionStrategy();
-			$matches = $processor->matches($value, $type, new TypeConfig($conversionStrategy));
-			$this->assertFalse(
-				$matches,
+			$result = $processor->parse($value, $type, new TypeConfig($conversionStrategy));
+			$reports = $result instanceof Failure ? $result->getReports() : $result->getNoticeReports();
+			$this->assertNotSame(
+				[],
+				$reports,
 				'Failed asserting that ' . $givenValueDescription . ' is invalid value for ' . $this->getClassName($type::class),
 			);
+
+			foreach ($reports as $report) {
+				$this->assertNotSame('', (string) $report->message, sprintf('Empty message for %s case.', $givenValueDescription));
+				$this->assertNotSame('', (string) $report->messageForDeveloper, sprintf('Empty developer message for %s case.', $givenValueDescription));
+			}
 		}
 	}
 

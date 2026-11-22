@@ -48,6 +48,8 @@ final class NonEmptyListTypeTest extends TypeTestCase
 		yield 'associative array mixed keys' => [0 => 'first', 'key' => 'second'];
 		yield 'sparse array' => [0 => 'first', 2 => 'third'];
 		yield 'array starting from 1' => [1 => 'first', 2 => 'second'];
+		yield 'valid items with sparse keys' => [0 => 1, 2 => 3];
+		yield 'valid items starting from 1' => [1 => 1, 2 => 2];
 
 		// Invalid item types for int list
 		yield 'list with strings' => ['hello', 'world'];
