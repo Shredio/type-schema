@@ -7,3 +7,6 @@ vendor
 
 .phpunit.result.cache
 CLAUDE.md
+
+## infection
+build/infection

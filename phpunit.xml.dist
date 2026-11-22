@@ -15,10 +15,20 @@
     </php>
 
     <testsuites>
-        <testsuite name="Project Test Suite">
+        <testsuite name="unit">
             <directory>tests</directory>
+            <exclude>tests/Unit/PhpStan</exclude>
+        </testsuite>
+        <testsuite name="phpstan">
+            <directory>tests/Unit/PhpStan</directory>
         </testsuite>
     </testsuites>
+
+    <source>
+        <include>
+            <directory>src</directory>
+        </include>
+    </source>
 
     <extensions>
     </extensions>

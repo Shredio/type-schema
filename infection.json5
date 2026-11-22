@@ -1,0 +1,24 @@
+{
+	"$schema": "vendor/infection/infection/resources/schema.json",
+	"source": {
+		"directories": [
+			"src"
+		],
+		"excludes": [
+			// PHPStan extensions run only inside the data provider of TypeInferenceTest,
+			// before coverage collection starts, so no test can ever be attributed to their mutants.
+			"PhpStan"
+		]
+	},
+	"timeout": 10,
+	"threads": "max",
+	"testFrameworkOptions": "--testsuite=unit",
+	"logs": {
+		"text": "build/infection/infection.log",
+		"summary": "build/infection/summary.log",
+		"html": "build/infection/infection.html"
+	},
+	"mutators": {
+		"@default": true
+	}
+}

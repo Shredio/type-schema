@@ -4,3 +4,4 @@
 /phpstan.neon export-ignore
 /LICENSE export-ignore
 /.gitignore export-ignore
+/infection.json5 export-ignore
