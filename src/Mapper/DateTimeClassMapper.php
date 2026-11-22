@@ -6,7 +6,7 @@ use DateTime;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Shredio\TypeSchema\Context\TypeContext;
-use Shredio\TypeSchema\Helper\NumberExclusiveRange;
+use Shredio\TypeSchema\Helper\NumberInclusiveRange;
 use Shredio\TypeSchema\Issue\InvalidDate;
 use Shredio\TypeSchema\Issue\InvalidType;
 use Shredio\TypeSchema\Issue\NumberOutOfRange;
@@ -14,14 +14,19 @@ use Shredio\TypeSchema\Result\Failure;
 use Shredio\TypeSchema\Mapper\Options\DateTimeOptions;
 
 /**
- * @extends ClassMapper<DateTime|DateTimeImmutable>
+ * Maps strings (and optionally integer timestamps) to DateTime, DateTimeImmutable and their subclasses.
+ * DateTimeInterface is mapped to DateTimeImmutable.
+ *
+ * @extends ClassMapper<DateTimeInterface>
  */
 final readonly class DateTimeClassMapper extends ClassMapper
 {
 
 	public function isSupported(string $className): bool
 	{
-		return is_a($className, DateTimeInterface::class, true);
+		return $className === DateTimeInterface::class
+			|| is_a($className, DateTime::class, true)
+			|| is_a($className, DateTimeImmutable::class, true);
 	}
 
 	public function create(string $className, mixed $valueToParse, TypeContext $context): object
@@ -31,16 +36,17 @@ final readonly class DateTimeClassMapper extends ClassMapper
 		if (is_string($valueToParse)) {
 			foreach ($options->formats as $format) {
 				// Symfony throws MalformedDateTimeException in the createFromFormat method
-				$ret = date_create_immutable_from_format($format, $valueToParse, $options->timeZone);
-				if ($ret !== false) {
-					return $className::createFromInterface($ret);
+				$dateTime = date_create_immutable_from_format($format, $valueToParse, $options->timeZone);
+				// warnings mean an overflowing date or time (e.g. 2024-02-30), which PHP silently shifts
+				if ($dateTime !== false && DateTimeImmutable::getLastErrors() === false) {
+					return $this->createInstance($className, $dateTime);
 				}
 			}
 
 			if ($options->constructor) {
 				$dateTime = date_create($valueToParse);
-				if ($dateTime !== false) {
-					return $className::createFromInterface($dateTime);
+				if ($dateTime !== false && DateTime::getLastErrors() === false) {
+					return $this->createInstance($className, $dateTime);
 				}
 			}
 
@@ -51,12 +57,11 @@ final readonly class DateTimeClassMapper extends ClassMapper
 			}
 
 			if ($valueToParse < 0) {
-				$range = NumberExclusiveRange::fromInts(0);
+				$range = NumberInclusiveRange::fromInts(0);
 				return new Failure(new NumberOutOfRange($valueToParse, $range, $range->decide($valueToParse)));
 			}
 
-			$dateTime = (new DateTime())->setTimestamp($valueToParse);
-			return $className::createFromInterface($dateTime);
+			return $this->createInstance($className, (new DateTimeImmutable())->setTimestamp($valueToParse));
 		}
 
 		if ($options->allowIntAsTimestamp) {
@@ -66,6 +71,22 @@ final readonly class DateTimeClassMapper extends ClassMapper
 		}
 
 		return new Failure(new InvalidType($def, $valueToParse));
+	}
+
+	/**
+	 * @param class-string<DateTimeInterface> $className
+	 */
+	private function createInstance(string $className, DateTimeInterface $dateTime): DateTimeInterface
+	{
+		if (is_a($className, DateTime::class, true)) {
+			return $className::createFromInterface($dateTime);
+		}
+
+		if (is_a($className, DateTimeImmutable::class, true)) {
+			return $className::createFromInterface($dateTime);
+		}
+
+		return DateTimeImmutable::createFromInterface($dateTime);
 	}
 
 }

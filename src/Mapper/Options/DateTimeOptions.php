@@ -9,10 +9,11 @@ final readonly class DateTimeOptions
 {
 
 	/**
-	 * @param list<non-empty-string> $formats
+	 * @param list<non-empty-string> $formats formats for createFromFormat(); fields missing in a format are set to the
+	 *                                        current time unless the format starts with "!" or ends with "|"
 	 */
 	public function __construct(
-		public array $formats = [DateTimeInterface::ATOM, DateTimeInterface::RFC3339_EXTENDED, 'Y-m-d H:i:s', 'Y-m-d'],
+		public array $formats = [DateTimeInterface::ATOM, DateTimeInterface::RFC3339_EXTENDED, 'Y-m-d H:i:s', '!Y-m-d'],
 		public bool $constructor = false,
 		public bool $allowIntAsTimestamp = false,
 		public ?DateTimeZone $timeZone = null,
