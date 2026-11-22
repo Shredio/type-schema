@@ -90,6 +90,9 @@ final readonly class SymfonyIssueRenderer implements IssueRenderer
 		};
 	}
 
+	/**
+	 * Plural messages need the %count% parameter, the translator selects the plural form by it.
+	 */
 	private function renderItemCountOutOfRange(ItemCountOutOfRange $issue): string
 	{
 		$range = $issue->range;
@@ -97,18 +100,18 @@ final readonly class SymfonyIssueRenderer implements IssueRenderer
 		if ($exactLimit !== null) {
 			return $this->translate(
 				'This collection should contain exactly {{ limit }} element.|This collection should contain exactly {{ limit }} elements.',
-				['{{ limit }}' => $exactLimit],
+				['{{ limit }}' => $exactLimit, '%count%' => $exactLimit],
 			);
 		}
 
 		return match ($issue->decision) {
 			RangeInclusiveDecision::ShouldBeGreaterOrEqual => $this->translate(
 				'This collection should contain {{ limit }} element or more.|This collection should contain {{ limit }} elements or more.',
-				['{{ limit }}' => $range->getMin()],
+				['{{ limit }}' => $range->getMin(), '%count%' => $range->getMin()],
 			),
 			RangeInclusiveDecision::ShouldBeLessOrEqual => $this->translate(
 				'This collection should contain {{ limit }} element or less.|This collection should contain {{ limit }} elements or less.',
-				['{{ limit }}' => $range->getMax()],
+				['{{ limit }}' => $range->getMax(), '%count%' => $range->getMax()],
 			),
 			default => throw new LogicException(sprintf('Unknown range decision %s.', $issue->decision->name)),
 		};

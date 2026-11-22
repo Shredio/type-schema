@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Issue\Renderer;
 
+use LogicException;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -80,6 +81,45 @@ final class EnglishIssueRendererTest extends TestCase
 			new ItemCountOutOfRange(5, NumberInclusiveRange::exactInt(2), RangeInclusiveDecision::ShouldBeLessOrEqual),
 			'Must contain exactly 2 items.',
 		];
+		yield 'item count exact one' => [
+			new ItemCountOutOfRange(5, NumberInclusiveRange::exactInt(1), RangeInclusiveDecision::ShouldBeLessOrEqual),
+			'Must contain exactly 1 item.',
+		];
+		yield 'item count at least many' => [
+			new ItemCountOutOfRange(1, NumberInclusiveRange::fromInts(min: 3), RangeInclusiveDecision::ShouldBeGreaterOrEqual),
+			'Must contain at least 3 items.',
+		];
+		yield 'item count at most one' => [
+			new ItemCountOutOfRange(2, NumberInclusiveRange::fromInts(max: 1), RangeInclusiveDecision::ShouldBeLessOrEqual),
+			'Must contain at most 1 item.',
+		];
+		yield 'number less' => [
+			new NumberOutOfRange(10, NumberExclusiveRange::fromInts(max: 10), RangeExclusiveDecision::ShouldBeLess),
+			'Must be less than 10.',
+		];
+		yield 'number at least float' => [
+			new NumberOutOfRange(1.0, NumberInclusiveRange::fromFloats(min: 1.5), RangeInclusiveDecision::ShouldBeGreaterOrEqual),
+			'Must be at least 1.5.',
+		];
+	}
+
+	/**
+	 * @return iterable<string, array{Issue}>
+	 */
+	public static function provideIssuesWithOkDecision(): iterable
+	{
+		yield 'number' => [new NumberOutOfRange(1, NumberInclusiveRange::fromInts(min: 0), RangeInclusiveDecision::Ok)];
+		yield 'exclusive number' => [new NumberOutOfRange(1, NumberExclusiveRange::fromInts(min: 0), RangeExclusiveDecision::Ok)];
+		yield 'item count' => [new ItemCountOutOfRange(1, NumberInclusiveRange::fromInts(min: 0), RangeInclusiveDecision::Ok)];
+	}
+
+	#[DataProvider('provideIssuesWithOkDecision')]
+	public function testOkDecisionCannotBeRendered(Issue $issue): void
+	{
+		$this->expectException(LogicException::class);
+		$this->expectExceptionMessage('Unknown range decision Ok.');
+
+		(new EnglishIssueRenderer())->render($issue, new ErrorReportConfig());
 	}
 
 	#[DataProvider('provideIssues')]

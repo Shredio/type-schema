@@ -102,9 +102,15 @@ final readonly class DeveloperValidationMessageFactory
 		}
 
 		if (is_float($value)) {
-			return is_finite($value)
-				? json_encode($value, self::JsonEncodeOptions)
-				: (string) $value;
+			if (is_nan($value)) {
+				return 'NAN'; // casting NAN to string triggers a warning since PHP 8.5
+			}
+
+			if (is_infinite($value)) {
+				return $value > 0 ? 'INF' : '-INF';
+			}
+
+			return json_encode($value, self::JsonEncodeOptions);
 		}
 
 		if (is_string($value)) {
