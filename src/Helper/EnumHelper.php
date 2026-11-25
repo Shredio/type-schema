@@ -16,6 +16,17 @@ final readonly class EnumHelper
 	 */
 	public static function getBackingValueType(string $backedEnum): int
 	{
+		/** @var array<class-string<BackedEnum>, int> $backingValueTypes */
+		static $backingValueTypes = [];
+
+		return $backingValueTypes[$backedEnum] ??= self::detectBackingValueType($backedEnum);
+	}
+
+	/**
+	 * @param class-string<BackedEnum> $backedEnum
+	 */
+	private static function detectBackingValueType(string $backedEnum): int
+	{
 		$cases = $backedEnum::cases();
 		if ($cases === []) {
 			return self::UnknownType;

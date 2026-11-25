@@ -3,19 +3,26 @@
 namespace Shredio\TypeSchema\Context;
 
 use PHPStan\PhpDocParser\Ast\Type\TypeNode;
+use Shredio\TypeSchema\Exception\LogicException;
+use Shredio\TypeSchema\Types\Type;
 use Shredio\TypeSchema\Validation\TypeSystem\TypeNodeHelper;
 
+/**
+ * A type is resolved to its type node lazily and only once, which keeps failures cheap to create.
+ */
 final class TypeDefinition
 {
 
-	/** @var (callable(): TypeNode)|TypeNode */
+	/** @var (callable(): TypeNode)|TypeNode|Type<mixed> */
 	private mixed $typeNode;
 
 	/**
-	 * @param (callable(): TypeNode)|TypeNode $typeNode
+	 * @param (callable(): TypeNode)|TypeNode|Type<mixed> $typeNode
+	 * @param TypeContext|null $context required when $typeNode is a type
 	 */
 	public function __construct(
-		callable|TypeNode $typeNode,
+		callable|TypeNode|Type $typeNode,
+		private ?TypeContext $context = null,
 	)
 	{
 		$this->typeNode = $typeNode;
@@ -46,11 +53,23 @@ final class TypeDefinition
 
 	private function getTypeNode(): TypeNode
 	{
-		if ($this->typeNode instanceof TypeNode) {
-			return $this->typeNode;
+		$typeNode = $this->typeNode;
+		if ($typeNode instanceof TypeNode) {
+			return $typeNode;
 		}
 
-		return $this->typeNode = ($this->typeNode)();
+		if ($typeNode instanceof Type) {
+			if ($this->context === null) {
+				throw new LogicException('The type context is required to resolve the type node of a type.');
+			}
+
+			$typeNode = $typeNode->resolveTypeNode($this->context);
+			$this->context = null;
+
+			return $this->typeNode = $typeNode;
+		}
+
+		return $this->typeNode = $typeNode();
 	}
 
 }

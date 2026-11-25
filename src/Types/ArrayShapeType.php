@@ -69,6 +69,7 @@ final readonly class ArrayShapeType extends Type
 		$return = [];
 		$issues = null;
 		$nestedContexts = $context->getNestedContexts();
+		$parsedRequiredKeys = 0;
 		foreach ($this->required as $key => $type) {
 			if (!array_key_exists($key, $value)) {
 				$issues ??= new IssueCollector();
@@ -80,8 +81,8 @@ final readonly class ArrayShapeType extends Type
 				continue;
 			}
 
+			$parsedRequiredKeys++;
 			$ret = $type->parse($value[$key], $nestedContexts[$key] ?? $context);
-			unset($value[$key]);
 			if ($ret instanceof Failure) {
 				$issues ??= new IssueCollector();
 				$issues->addChild($ret, $key, IdentifiedPath::create($this->identifier, $return));
@@ -101,7 +102,13 @@ final readonly class ArrayShapeType extends Type
 			$return[$key] = $ret;
 		}
 
-		foreach ($value as $key => $val) {
+		// parsed keys are not unset from the value, that would copy the whole array for every parsed shape
+		$hasOtherKeys = count($value) !== $parsedRequiredKeys;
+		foreach ($hasOtherKeys ? $value : [] as $key => $val) {
+			if (isset($this->required[$key])) {
+				continue;
+			}
+
 			$type = $this->optional[$key] ?? $this->rest;
 			if ($type === null) {
 				$issues ??= new IssueCollector();

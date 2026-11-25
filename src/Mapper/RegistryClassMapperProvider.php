@@ -9,10 +9,13 @@ final class RegistryClassMapperProvider implements ClassMapperProvider
 {
 
 	/** @var array<class-string<object>, ClassMapper<covariant object>> */
-	private array $cachedRegistry;
+	private readonly array $cachedRegistry;
 
 	/** @var list<ClassMapper<covariant object>> */
-	private array $registry;
+	private readonly array $registry;
+
+	/** @var array<class-string, ClassMapperType<object>|false> false when no mapper of this registry supports the class */
+	private array $types = [];
 
 	/**
 	 * @param iterable<ClassMapper<covariant object>> $mappers
@@ -22,6 +25,7 @@ final class RegistryClassMapperProvider implements ClassMapperProvider
 		private readonly ?ClassMapperProvider $innerProvider = null,
 	)
 	{
+		/** @var array<class-string<object>, ClassMapper<covariant object>> $cachedRegistry */
 		$cachedRegistry = [];
 		$registry = [];
 		foreach ($mappers as $mapper) {
@@ -56,6 +60,22 @@ final class RegistryClassMapperProvider implements ClassMapperProvider
 	 */
 	public function provide(string $className): ?Type
 	{
+		/** @var ClassMapperType<T>|false $type */
+		$type = $this->types[$className] ??= $this->createType($className);
+		if ($type !== false) {
+			return $type;
+		}
+
+		return $this->innerProvider?->provide($className);
+	}
+
+	/**
+	 * @template T of object
+	 * @param class-string<T> $className
+	 * @return ClassMapperType<T>|false
+	 */
+	private function createType(string $className): ClassMapperType|false
+	{
 		/** @var ClassMapper<T>|null $mapper */
 		$mapper = $this->cachedRegistry[$className] ?? null;
 		if ($mapper !== null) {
@@ -65,13 +85,11 @@ final class RegistryClassMapperProvider implements ClassMapperProvider
 		/** @var ClassMapper<T> $mapper */
 		foreach ($this->registry as $mapper) {
 			if ($mapper->isSupported($className)) {
-				$this->cachedRegistry[$className] = $mapper;
-
 				return new ClassMapperType($className, $mapper);
 			}
 		}
 
-		return $this->innerProvider?->provide($className);
+		return false;
 	}
 
 }

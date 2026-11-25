@@ -38,7 +38,15 @@ abstract readonly class Type
 
 	final protected function createDefinition(TypeContext $context): TypeDefinition
 	{
-		return new TypeDefinition(fn (): TypeNode => $this->getTypeNode($context));
+		return new TypeDefinition($this, $context);
+	}
+
+	/**
+	 * @internal used by TypeDefinition to resolve the type node lazily
+	 */
+	final public function resolveTypeNode(TypeContext $context): TypeNode
+	{
+		return $this->getTypeNode($context);
 	}
 
 	/**

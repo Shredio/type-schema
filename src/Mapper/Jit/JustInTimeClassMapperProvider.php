@@ -8,14 +8,17 @@ use Shredio\TypeSchema\Mapper\WarmableClassMapperProvider;
 use Shredio\TypeSchema\Types\MixedType;
 use Shredio\TypeSchema\Types\Type;
 
-final readonly class JustInTimeClassMapperProvider implements WarmableClassMapperProvider, ValidatableClassMapperProvider
+final class JustInTimeClassMapperProvider implements WarmableClassMapperProvider, ValidatableClassMapperProvider
 {
 
+	/** @var array<class-string, Type<object>> */
+	private array $types = [];
+
 	public function __construct(
-		private ClassMapperCompileTargetProvider $objectMapperCompileInfoProvider,
-		private ClassMapperCompiler $compiler,
-		private ?ClassMapperProvider $innerProvider = null,
-		private bool $raiseWarningsOnMissingClasses = false,
+		private readonly ClassMapperCompileTargetProvider $objectMapperCompileInfoProvider,
+		private readonly ClassMapperCompiler $compiler,
+		private readonly ?ClassMapperProvider $innerProvider = null,
+		private readonly bool $raiseWarningsOnMissingClasses = false,
 	)
 	{
 	}
@@ -37,7 +40,8 @@ final readonly class JustInTimeClassMapperProvider implements WarmableClassMappe
 	 */
 	public function provide(string $className): Type
 	{
-		return $this->create($this->compiler, $className, $this->raiseWarningsOnMissingClasses);
+		/** @var Type<T> */
+		return $this->types[$className] ??= $this->create($this->compiler, $className, $this->raiseWarningsOnMissingClasses);
 	}
 
 	/**

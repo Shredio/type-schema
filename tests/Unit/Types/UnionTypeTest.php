@@ -9,6 +9,7 @@ use Shredio\TypeSchema\Result\Failure;
 use Shredio\TypeSchema\Result\Success;
 use Shredio\TypeSchema\Types\BoolType;
 use Shredio\TypeSchema\Types\IntType;
+use Shredio\TypeSchema\Types\NullType;
 use Shredio\TypeSchema\Types\StringType;
 use Shredio\TypeSchema\Types\UnionType;
 use Shredio\TypeSchema\TypeSchema;
@@ -73,6 +74,26 @@ final class UnionTypeTest extends TypeTestCase
 		$this->assertTrue($this->checkType($unionType, 123));
 		$this->assertFalse($this->checkType($unionType, 45.67));
 		$this->assertFalse($this->checkType($unionType, true));
+	}
+
+	public function testNullMemberMatchesNull(): void
+	{
+		$unionType = new UnionType([new IntType(), new NullType()]);
+
+		$this->assertNull($this->validStrictParse($unionType, null));
+		$this->assertSame(5, $this->validStrictParse($unionType, 5));
+		$this->assertFalse($this->checkType($unionType, ''));
+	}
+
+	public function testScalarMembersUseConversionStrategy(): void
+	{
+		$unionType = new UnionType([new NullType(), new BoolType(), new IntType(), new StringType()]);
+
+		$this->assertNull($this->validLenientParse($unionType, ''));
+		$this->assertTrue($this->validLenientParse($unionType, 'true'));
+		$this->assertSame(12, $this->validLenientParse($unionType, '12'));
+		$this->assertSame('text', $this->validLenientParse($unionType, 'text'));
+		$this->assertSame('12', $this->validStrictParse($unionType, '12'));
 	}
 
 	public function testPrefersMemberWithoutNotices(): void

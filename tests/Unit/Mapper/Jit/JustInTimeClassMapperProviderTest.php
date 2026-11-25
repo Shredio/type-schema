@@ -60,13 +60,24 @@ final class JustInTimeClassMapperProviderTest extends TestCase
 	public function testDeclaredMapperIsReturnedWithoutCompiling(): void
 	{
 		$compiler = new FakeCompiler();
-		$provider = new JustInTimeClassMapperProvider($this->targetProvider, $compiler);
-		$provider->provide(stdClass::class);
+		(new JustInTimeClassMapperProvider($this->targetProvider, $compiler))->provide(stdClass::class);
 
-		$mapper = $provider->provide(stdClass::class);
+		$mapper = (new JustInTimeClassMapperProvider($this->targetProvider, $compiler))->provide(stdClass::class);
 
 		$this->assertSame('compiled stdClass', $this->parse($mapper));
 		$this->assertSame(['needsRecompile stdClass', 'compile stdClass'], $compiler->log->entries);
+	}
+
+	public function testMapperIsResolvedOnlyOnceForClass(): void
+	{
+		$inner = new CountingClassMapperProvider();
+		$provider = new JustInTimeClassMapperProvider($this->targetProvider, new FakeCompiler(), $inner);
+		$mapper = $provider->provide(stdClass::class);
+		$lookupsOfFirstCall = $inner->lookups;
+
+		$this->assertSame($mapper, $provider->provide(stdClass::class));
+		$this->assertGreaterThan(0, $lookupsOfFirstCall);
+		$this->assertSame($lookupsOfFirstCall, $inner->lookups);
 	}
 
 	public function testExistingFileIsLoadedWithoutCompiling(): void
@@ -260,6 +271,20 @@ final class JustInTimeClassMapperProviderTest extends TestCase
 		$provider = new RegistryClassMapperProvider([]);
 
 		return new TypeContext(ConversionStrategyFactory::lenient(), $provider);
+	}
+
+}
+
+final class CountingClassMapperProvider implements ClassMapperProvider
+{
+
+	public int $lookups = 0;
+
+	public function provide(string $className): ?Type
+	{
+		$this->lookups++;
+
+		return null;
 	}
 
 }

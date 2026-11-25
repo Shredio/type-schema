@@ -34,6 +34,43 @@ final readonly class UnionType extends Type
 		$firstWithNotices = null;
 		$firstValidationFailure = null;
 		foreach ($this->types as $type) {
+			// Scalar members are converted directly, parse() would create a failure for every member that does not
+			// match and such failures are thrown away. Their failures are structural, so they are never returned.
+			if ($type instanceof StringType) {
+				$val = $context->conversionStrategy->string($valueToParse);
+				if ($val !== null) {
+					return $val;
+				}
+
+				continue;
+			}
+
+			if ($type instanceof IntType) {
+				$val = $context->conversionStrategy->int($valueToParse);
+				if ($val !== null) {
+					return $val;
+				}
+
+				continue;
+			}
+
+			if ($type instanceof BoolType) {
+				$val = $context->conversionStrategy->bool($valueToParse);
+				if ($val !== null) {
+					return $val;
+				}
+
+				continue;
+			}
+
+			if ($type instanceof NullType) {
+				if ($context->conversionStrategy->null($valueToParse) === null) {
+					return null;
+				}
+
+				continue;
+			}
+
 			$val = $type->parse($valueToParse, $context);
 			if ($val instanceof Failure) {
 				if ($firstValidationFailure === null && $val->getCategory() === ErrorCategory::Validation) {

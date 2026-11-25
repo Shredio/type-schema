@@ -218,6 +218,37 @@ final class ArrayShapeTypeTest extends TypeTestCase
 		$this->assertSame(['extra'], $notices[0]->toArrayPath());
 	}
 
+	public function testExtraKeyIsReportedWhenRequiredKeyIsMissing(): void
+	{
+		$type = new ArrayShapeType([
+			'name' => new StringType(),
+			'age' => new IntType(),
+		]);
+
+		$result = $this->getProcessor()->parse(['name' => 'John', 'extra' => 1], $type, collectErrors: true);
+
+		$this->assertInstanceOf(Failure::class, $result);
+		$this->assertSame(['age'], $result->getReports()[0]->toArrayPath());
+		$notices = $result->getNoticeReports();
+		$this->assertCount(1, $notices);
+		$this->assertSame(['extra'], $notices[0]->toArrayPath());
+	}
+
+	public function testRequiredKeysComeFirstInResult(): void
+	{
+		$type = new ArrayShapeType([
+			'name' => new StringType(),
+			'nickname' => new OptionalType(new StringType()),
+			'age' => new IntType(),
+		], new MixedType());
+
+		$result = $this->getProcessor()->parse(['extra' => true, 'age' => 30, 'nickname' => 'Johnny', 'name' => 'John'], $type);
+
+		$this->assertInstanceOf(Success::class, $result);
+		$this->assertSame(['name' => 'John', 'age' => 30, 'extra' => true, 'nickname' => 'Johnny'], $result->value);
+		$this->assertFalse($result->hasNotices());
+	}
+
 	public function testNoticesUseIdentifiedPath(): void
 	{
 		$t = TypeSchema::get();

@@ -79,6 +79,25 @@ final class RegistryClassMapperProviderTest extends TestCase
 		$this->assertSame(1, $mapper->supportChecks->count);
 	}
 
+	public function testTypeIsCreatedOnlyOnceForClass(): void
+	{
+		$provider = new RegistryClassMapperProvider([new StdClassMapper()]);
+		$cacheableProvider = new RegistryClassMapperProvider([new CacheableStdClassMapper()]);
+
+		$this->assertSame($provider->provide(stdClass::class), $provider->provide(stdClass::class));
+		$this->assertSame($cacheableProvider->provide(stdClass::class), $cacheableProvider->provide(stdClass::class));
+	}
+
+	public function testUnsupportedClassIsLookedUpOnlyOnce(): void
+	{
+		$mapper = new StdClassMapper();
+		$provider = new RegistryClassMapperProvider([$mapper], new RegistryClassMapperProvider([new DateTimeClassMapper()]));
+
+		$this->assertInstanceOf(ClassMapperType::class, $provider->provide(DateTimeImmutable::class));
+		$this->assertInstanceOf(ClassMapperType::class, $provider->provide(DateTimeImmutable::class), 'The inner provider is still used.');
+		$this->assertSame(1, $mapper->supportChecks->count);
+	}
+
 	public function testFirstSupportingMapperWins(): void
 	{
 		$provider = new RegistryClassMapperProvider([new StdClassMapper('first'), new StdClassMapper('second')]);
